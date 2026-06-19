@@ -1,0 +1,205 @@
+{% extends "base.html" %} {% block title %}Edit Patient - Hospital Management
+System{% endblock %} {% block content %}
+<div class="container-fluid py-4">
+  <div class="alert d-none" id="messageBox" role="alert"></div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h3 mb-1"><i class="fas fa-user-edit"></i> Edit Patient</h1>
+      <p class="text-muted mb-0">
+        Update a patient's details using the shared hospital interface.
+      </p>
+    </div>
+    <a href="/patients/" class="btn btn-outline-primary">Back to patients</a>
+  </div>
+
+  <div class="card p-4 mt-3">
+    <input class="form-control mb-2" id="first_name" />
+    <input class="form-control mb-2" id="last_name" />
+
+    <select class="form-control mb-2" id="gender">
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+
+    <input type="date" class="form-control mb-2" id="dob" />
+    <input class="form-control mb-2" id="phone" />
+
+    <input class="form-control mb-2" id="village" placeholder="Village" />
+    <input class="form-control mb-2" id="district" placeholder="District" />
+    <input
+      class="form-control mb-2"
+      id="address"
+      placeholder="Current Residence / Street Address"
+    />
+    <input
+      class="form-control mb-2"
+      id="next_of_kin_name"
+      placeholder="Next of Kin Name"
+    />
+    <input
+      class="form-control mb-2"
+      id="next_of_kin_phone"
+      placeholder="Next of Kin Phone"
+    />
+
+    <button class="btn btn-primary" onclick="updatePatient()">Update</button>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    function apiRequest(url, options = {}) {
+      if (typeof window.apiCall === "function") {
+        return window.apiCall(url, options);
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "/login/";
+        return Promise.reject(new Error("No token"));
+      }
+
+      const headers = {
+        Authorization: `Token ${token}`,
+        "Content-Type": "application/json",
+        ...options.headers,
+      };
+
+      return fetch(url, { ...options, headers });
+    }
+
+    async function getApiErrorMessage(
+      response,
+      defaultMessage,
+      permissionMessage,
+    ) {
+      if (response.status === 401) {
+        return "Your session has expired. Please sign in again.";
+      }
+
+      if (response.status === 403) {
+        return (
+          permissionMessage ||
+          "You do not have permission to perform this action."
+        );
+      }
+
+      const errorData = await response.json().catch(() => ({}));
+      return errorData.error || errorData.detail || defaultMessage;
+    }
+
+    function showMessage(message, type = "warning") {
+      const box = document.getElementById("messageBox");
+      box.className = `alert alert-${type}`;
+      box.textContent = message;
+      box.classList.remove("d-none");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function clearMessage() {
+      const box = document.getElementById("messageBox");
+      box.textContent = "";
+      box.className = "alert d-none";
+    }
+
+    async function loadPatient() {
+      if (!id) {
+        showMessage("Missing patient id.", "danger");
+        window.location.href = "/patients/";
+        return;
+      }
+
+      clearMessage();
+
+      try {
+        const response = await apiRequest(`/api/patients/${id}/`);
+        if (!response.ok) {
+          throw new Error(
+            await getApiErrorMessage(
+              response,
+              "Unable to load patient.",
+              "You do not have permission to view this patient record.",
+            ),
+          );
+        }
+
+        const patient = await response.json();
+        document.getElementById("first_name").value = patient.first_name || "";
+        document.getElementById("last_name").value = patient.last_name || "";
+        document.getElementById("gender").value = patient.gender || "";
+        document.getElementById("dob").value = patient.dob || "";
+        document.getElementById("phone").value = patient.phone || "";
+        document.getElementById("village").value = patient.village || "";
+        document.getElementById("district").value = patient.district || "";
+        document.getElementById("address").value = patient.address || "";
+        document.getElementById("next_of_kin_name").value =
+          patient.next_of_kin_name || "";
+        document.getElementById("next_of_kin_phone").value =
+          patient.next_of_kin_phone || "";
+      } catch (error) {
+        showMessage(error.message || "Unable to load patient.", "danger");
+        window.location.href = "/patients/";
+      }
+    }
+
+    async function updatePatient() {
+      const payload = {
+        first_name: document.getElementById("first_name").value.trim(),
+        last_name: document.getElementById("last_name").value.trim(),
+        gender: document.getElementById("gender").value,
+        dob: document.getElementById("dob").value,
+        phone: document.getElementById("phone").value.trim(),
+        village: document.getElementById("village").value.trim(),
+        district: document.getElementById("district").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        next_of_kin_name: document
+          .getElementById("next_of_kin_name")
+          .value.trim(),
+        next_of_kin_phone: document
+          .getElementById("next_of_kin_phone")
+          .value.trim(),
+      };
+
+      if (
+        !payload.first_name ||
+        !payload.last_name ||
+        !payload.gender ||
+        !payload.dob
+      ) {
+        showMessage(
+          "Please complete the required fields before saving.",
+          "warning",
+        );
+        return;
+      }
+
+      clearMessage();
+
+      try {
+        const response = await apiRequest(`/api/patients/${id}/`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            await getApiErrorMessage(
+              response,
+              "Unable to update patient.",
+              "You do not have permission to edit patient records.",
+            ),
+          );
+        }
+
+        showMessage("Updated successfully!", "success");
+        window.location.href = "/patients/";
+      } catch (error) {
+        showMessage(error.message || "Unable to update patient.", "danger");
+      }
+    }
+
+    loadPatient();
+  </script>
+  {% endblock %}
+</div>

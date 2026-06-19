@@ -1,0 +1,586 @@
+{% extends "base.html" %} {% block title %}Laboratory - Hospital Management
+System{% endblock %} {% block content %}
+<div class="main-content">
+  <div class="alert d-none" id="messageBox" role="alert"></div>
+  <h2><i class="fas fa-flask"></i> Laboratory Management</h2>
+  <hr />
+
+  <!-- Filter Section -->
+  <div class="filter-section">
+    <div class="row">
+      <div class="col-md-4">
+        <input
+          type="text"
+          id="searchPatient"
+          class="form-control"
+          placeholder="Search by patient name..."
+        />
+      </div>
+      <div class="col-md-3">
+        <select id="statusFilter" class="form-control">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <input type="date" id="dateFilter" class="form-control" />
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-secondary w-100" onclick="filterLab()">
+          <i class="fas fa-filter"></i> Filter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Test Button -->
+  <div class="mb-3">
+    <button
+      class="btn btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#labTestModal"
+    >
+      <i class="fas fa-plus"></i> Order Test
+    </button>
+  </div>
+
+  <!-- Lab Tests Table -->
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th>Test ID</th>
+          <th>Patient</th>
+          <th>Test Name</th>
+          <th>Ordered Date</th>
+          <th>Sample Date</th>
+          <th>Result Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="labTable">
+        <tr>
+          <td colspan="8" class="text-center">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center" id="pagination"></ul>
+  </nav>
+</div>
+
+<!-- Order Test Modal -->
+<div class="modal fade" id="labTestModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="labTestModalTitle">Order Lab Test</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="labTestForm">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="patient_id" class="form-label">Patient *</label>
+                <select id="patient_id" class="form-control" required>
+                  <option value="">Select Patient</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="test_type" class="form-label">Test Type *</label>
+                <select id="test_type" class="form-control" required>
+                  <option value="">Select Test</option>
+                  <option value="blood_test">Blood Test</option>
+                  <option value="urine_test">Urine Test</option>
+                  <option value="xray">X-Ray</option>
+                  <option value="ultrasound">Ultrasound</option>
+                  <option value="ct_scan">CT Scan</option>
+                  <option value="ecg">ECG</option>
+                  <option value="pathology">Pathology</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="ordered_date" class="form-label"
+                  >Ordered Date *</label
+                >
+                <input
+                  type="date"
+                  id="ordered_date"
+                  class="form-control"
+                  required
+                />
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="sample_date" class="form-label"
+                  >Sample Collection Date</label
+                >
+                <input type="date" id="sample_date" class="form-control" />
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="notes" class="form-label"
+              >Test Instructions/Notes</label
+            >
+            <textarea
+              id="notes"
+              class="form-control"
+              rows="3"
+              placeholder="Fasting required, etc."
+            ></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="test_status" class="form-label">Status</label>
+            <select id="test_status" class="form-control">
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveLabTest()">
+          Save Test Order
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Test Results Modal -->
+<div class="modal fade" id="viewResultsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Test Results</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="viewResultsContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Results Modal -->
+<div class="modal fade" id="uploadResultsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Upload Test Results</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="result_date" class="form-label">Result Date *</label>
+          <input type="date" id="result_date" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label for="result_notes" class="form-label"
+            >Result Notes/Findings *</label
+          >
+          <textarea
+            id="result_notes"
+            class="form-control"
+            rows="4"
+            required
+            placeholder="Enter test results and findings"
+          ></textarea>
+        </div>
+        <div class="mb-3">
+          <label for="result_file" class="form-label"
+            >Result File (Optional)</label
+          >
+          <input type="file" id="result_file" class="form-control" />
+        </div>
+        <div class="mb-3">
+          <label for="reviewed_by" class="form-label"
+            >Reviewed By (Doctor/Technician)</label
+          >
+          <input type="text" id="reviewed_by" class="form-control" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-success" onclick="uploadResults()">
+          Upload Results
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block extra_js %}
+<script>
+  const API_URL = "http://127.0.0.1:8000/api";
+  const token = localStorage.getItem("token");
+  let currentPage = 1;
+  let editingId = null;
+  let resultsTestId = null;
+
+  function showMessage(message, type = "warning") {
+    const box = document.getElementById("messageBox");
+    if (!box) return;
+    box.className = `alert alert-${type}`;
+    box.textContent = message;
+    box.classList.remove("d-none");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function clearMessage() {
+    const box = document.getElementById("messageBox");
+    if (!box) return;
+    box.textContent = "";
+    box.className = "alert d-none";
+  }
+
+  if (!token) {
+    showMessage("Login required", "warning");
+    window.location.href = "/login";
+  }
+
+  // Initialize
+  document.addEventListener("DOMContentLoaded", function () {
+    loadPatients();
+    loadLab();
+    document.getElementById("ordered_date").valueAsDate = new Date();
+    document.getElementById("result_date").valueAsDate = new Date();
+  });
+
+  // Load patients
+  function loadPatients() {
+    fetch(`${API_URL}/patients/`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const select = document.getElementById("patient_id");
+        select.innerHTML = '<option value="">Select Patient</option>';
+        (Array.isArray(data) ? data : data.results || []).forEach((p) => {
+          select.innerHTML += `<option value="${p.id}">${p.first_name} ${p.last_name}</option>`;
+        });
+      });
+  }
+
+  // Load lab tests
+  function loadLab() {
+    clearMessage();
+    const search = document.getElementById("searchPatient").value;
+    const status = document.getElementById("statusFilter").value;
+    const date = document.getElementById("dateFilter").value;
+
+    let url = `${API_URL}/lab-results/?page=${currentPage}`;
+    if (search) url += `&search=${search}`;
+    if (status) url += `&status=${status}`;
+    if (date) url += `&date=${date}`;
+
+    fetch(url, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const tests = Array.isArray(data) ? data : data.results || [];
+        renderLab(tests);
+        if (data.total_pages) {
+          renderPagination(data.total_pages);
+        }
+      })
+      .catch((err) => {
+        console.error("Error loading lab tests:", err);
+        document.getElementById("labTable").innerHTML =
+          '<tr><td colspan="8" class="text-center text-danger">Error loading tests</td></tr>';
+        showMessage("Unable to load lab tests right now.", "danger");
+      });
+  }
+
+  // Render lab table
+  function renderLab(tests) {
+    const table = document.getElementById("labTable");
+    if (!tests || tests.length === 0) {
+      table.innerHTML =
+        '<tr><td colspan="8" class="text-center">No tests found</td></tr>';
+      return;
+    }
+
+    table.innerHTML = tests
+      .map(
+        (t) => `
+      <tr>
+        <td>#${t.id}</td>
+        <td>${t.patient_name || "N/A"}</td>
+        <td>${t.test_type || "N/A"}</td>
+        <td>${new Date(t.ordered_date).toLocaleDateString()}</td>
+        <td>${t.sample_date ? new Date(t.sample_date).toLocaleDateString() : "-"}</td>
+        <td>${t.result_date ? new Date(t.result_date).toLocaleDateString() : "-"}</td>
+        <td>
+          <span class="status-badge ${t.status}">
+            ${t.status}
+          </span>
+        </td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-info" onclick="viewResults(${t.id})">
+              <i class="fas fa-file-alt"></i>
+            </button>
+            <button class="btn btn-sm btn-warning" onclick="editTest(${t.id})">
+              <i class="fas fa-edit"></i>
+            </button>
+            ${
+              t.status !== "completed"
+                ? `
+              <button class="btn btn-sm btn-success" onclick="initiateUpload(${t.id})">
+                <i class="fas fa-upload"></i>
+              </button>
+            `
+                : ""
+            }
+            <button class="btn btn-sm btn-danger" onclick="deleteTest(${t.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `,
+      )
+      .join("");
+  }
+
+  // Filter lab
+  function filterLab() {
+    currentPage = 1;
+    loadLab();
+  }
+
+  // View results
+  function viewResults(id) {
+    fetch(`${API_URL}/lab-results/${id}/`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((t) => {
+        const content = `
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Patient:</strong> ${t.patient_name}</p>
+              <p><strong>Test Type:</strong> ${t.test_type}</p>
+              <p><strong>Ordered Date:</strong> ${new Date(t.ordered_date).toLocaleDateString()}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Sample Date:</strong> ${t.sample_date ? new Date(t.sample_date).toLocaleDateString() : "N/A"}</p>
+              <p><strong>Result Date:</strong> ${t.result_date ? new Date(t.result_date).toLocaleDateString() : "Pending"}</p>
+              <p><strong>Status:</strong> <span class="status-badge ${t.status}">${t.status}</span></p>
+            </div>
+          </div>
+          <hr>
+          ${
+            t.result_notes
+              ? `
+            <p><strong>Results:</strong></p>
+            <p>${t.result_notes}</p>
+            <hr>
+          `
+              : ""
+          }
+          ${
+            t.notes
+              ? `
+            <p><strong>Instructions:</strong></p>
+            <p>${t.notes}</p>
+          `
+              : ""
+          }
+        `;
+        document.getElementById("viewResultsContent").innerHTML = content;
+        new bootstrap.Modal(document.getElementById("viewResultsModal")).show();
+      });
+  }
+
+  // Edit test
+  function editTest(id) {
+    fetch(`${API_URL}/lab-results/${id}/`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((t) => {
+        editingId = id;
+        document.getElementById("labTestModalTitle").textContent =
+          "Edit Lab Test";
+        document.getElementById("patient_id").value = t.patient;
+        document.getElementById("test_type").value = t.test_type;
+        document.getElementById("ordered_date").value = t.ordered_date;
+        document.getElementById("sample_date").value = t.sample_date || "";
+        document.getElementById("notes").value = t.notes || "";
+        document.getElementById("test_status").value = t.status;
+        new bootstrap.Modal(document.getElementById("labTestModal")).show();
+      });
+  }
+
+  // Save lab test
+  function saveLabTest() {
+    const data = {
+      patient: document.getElementById("patient_id").value,
+      test_type: document.getElementById("test_type").value,
+      ordered_date: document.getElementById("ordered_date").value,
+      sample_date: document.getElementById("sample_date").value || null,
+      notes: document.getElementById("notes").value,
+      status: document.getElementById("test_status").value,
+    };
+
+    const method = editingId ? "PUT" : "POST";
+    const url = editingId
+      ? `${API_URL}/lab-results/${editingId}/`
+      : `${API_URL}/lab-results/`;
+
+    fetch(url, {
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
+      },
+      body: JSON.stringify(data),
+    })
+      .then((res) => {
+        if (res.ok) {
+          showMessage("Test order saved successfully!", "success");
+          resetForm();
+          loadLab();
+          bootstrap.Modal.getInstance(
+            document.getElementById("labTestModal"),
+          ).hide();
+        } else {
+          showMessage("Error saving test order", "danger");
+        }
+      })
+      .catch((err) => {
+        console.error("Error:", err);
+        showMessage("Error saving test order", "danger");
+      });
+  }
+
+  // Initiate upload
+  function initiateUpload(id) {
+    resultsTestId = id;
+    document.getElementById("result_date").valueAsDate = new Date();
+    new bootstrap.Modal(document.getElementById("uploadResultsModal")).show();
+  }
+
+  // Upload results
+  function uploadResults() {
+    const data = {
+      result_date: document.getElementById("result_date").value,
+      result_notes: document.getElementById("result_notes").value,
+      reviewed_by: document.getElementById("reviewed_by").value,
+      status: "completed",
+    };
+
+    fetch(`${API_URL}/lab-results/${resultsTestId}/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
+      },
+      body: JSON.stringify(data),
+    }).then((res) => {
+      if (res.ok) {
+        showMessage("Results uploaded successfully!", "success");
+        loadLab();
+        bootstrap.Modal.getInstance(
+          document.getElementById("uploadResultsModal"),
+        ).hide();
+      } else {
+        showMessage("Error uploading results", "danger");
+      }
+    });
+  }
+
+  // Delete test
+  function deleteTest(id) {
+    if (confirm("Delete this test order?")) {
+      clearMessage();
+      fetch(`${API_URL}/lab-results/${id}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Token ${token}` },
+      }).then((res) => {
+        if (res.ok) {
+          showMessage("Test deleted!", "success");
+          loadLab();
+        } else {
+          showMessage("Error deleting test", "danger");
+        }
+      });
+    }
+  }
+
+  // Reset form
+  function resetForm() {
+    editingId = null;
+    document.getElementById("labTestModalTitle").textContent = "Order Lab Test";
+    document.getElementById("labTestForm").reset();
+  }
+
+  // Pagination
+  function renderPagination(totalPages) {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    for (let i = 1; i <= totalPages; i++) {
+      const li = document.createElement("li");
+      li.className = `page-item ${i === currentPage ? "active" : ""}`;
+      li.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>`;
+      pagination.appendChild(li);
+    }
+  }
+
+  function goToPage(page) {
+    currentPage = page;
+    loadLab();
+  }
+
+  // Event listeners
+  document.getElementById("searchPatient").addEventListener("keyup", () => {
+    currentPage = 1;
+    loadLab();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %} {% block title %}Beds Management - Hospital Management
+System{% endblock %} {% block content %}
+<div class="container-fluid py-4">
+  <div class="page-header mb-3">
+    <div>
+      <h1><i class="fas fa-bed me-2"></i>Beds Management</h1>
+      <p class="subtitle">
+        Track live bed availability and keep ward capacity monitoring aligned
+        with the shared hospital workflow.
+      </p>
+    </div>
+    <div class="page-actions">
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        onclick="loadBeds()"
+      >
+        <i class="fas fa-sync-alt me-2"></i>Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card p-3 h-100">
+        <p class="text-muted mb-1">Total beds</p>
+        <h3 id="totalBeds" class="mb-0">0</h3>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 h-100">
+        <p class="text-muted mb-1">Available</p>
+        <h3 id="availableBeds" class="mb-0 text-success">0</h3>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 h-100">
+        <p class="text-muted mb-1">Occupied</p>
+        <h3 id="occupiedBeds" class="mb-0 text-danger">0</h3>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-3 h-100">
+        <p class="text-muted mb-1">Maintenance</p>
+        <h3 id="maintenanceBeds" class="mb-0 text-warning">0</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Load bed overview</span>
+      <span class="badge bg-info">Live data</span>
+    </div>
+    <div class="card-body">
+      <div class="row g-3" id="bedsContainer">
+        <div class="col-12 text-center py-5">
+          <p class="text-muted mb-0">Loading bed overview...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  const statusClassMap = {
+    available: "success",
+    occupied: "danger",
+    maintenance: "warning",
+  };
+
+  function updateStats(beds) {
+    document.getElementById("totalBeds").textContent = beds.length;
+    document.getElementById("availableBeds").textContent = beds.filter(
+      (bed) => bed.status === "available",
+    ).length;
+    document.getElementById("occupiedBeds").textContent = beds.filter(
+      (bed) => bed.status === "occupied",
+    ).length;
+    document.getElementById("maintenanceBeds").textContent = beds.filter(
+      (bed) => bed.status === "maintenance",
+    ).length;
+  }
+
+  async function loadBeds() {
+    const container = document.getElementById("bedsContainer");
+
+    container.innerHTML =
+      '<div class="col-12 text-center py-5"><p class="text-muted mb-0">Loading bed overview...</p></div>';
+
+    try {
+      const response = await window.apiCall("/api/beds/");
+      const data = await response.json();
+      const beds = Array.isArray(data) ? data : data.results || [];
+
+      updateStats(beds);
+
+      if (!beds.length) {
+        container.innerHTML =
+          '<div class="col-12 text-center py-5"><p class="text-muted mb-0">No bed records are available.</p></div>';
+        return;
+      }
+
+      container.innerHTML = beds
+        .map((bed) => {
+          const status = statusClassMap[bed.status] || "secondary";
+          return `
+            <div class="col-lg-3 col-md-4">
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                  <div class="mb-3">
+                    <span class="badge bg-${status} text-uppercase">${bed.status}</span>
+                  </div>
+                  <h4 class="mb-2"><i class="fas fa-bed me-2"></i>${bed.bed_number || "Bed"}</h4>
+                  <p class="mb-1 text-muted">Ward: ${bed.ward || "Unassigned"}</p>
+                  <p class="mb-0 text-muted">Type: ${bed.bed_type || "Standard"}</p>
+                </div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    } catch (error) {
+      container.innerHTML =
+        '<div class="col-12 text-center py-5"><p class="text-muted mb-0">Unable to load bed overview right now.</p></div>';
+    }
+  }
+
+  loadBeds();
+</script>
+{% endblock %}

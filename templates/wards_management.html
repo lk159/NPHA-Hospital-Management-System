@@ -1,0 +1,512 @@
+{% extends "base.html" %} {% block title %}Ward & Bed Management{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <div class="alert d-none" id="messageBox" role="alert"></div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-1">Ward & Bed Management</h1>
+      <p class="text-muted mb-0">
+        Create wards, manage bed inventory, and track occupancy.
+      </p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div
+          class="card-header bg-white d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Wards</h5>
+          <button class="btn btn-sm btn-primary" onclick="openWardModal()">
+            Add Ward
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Total Beds</th>
+                  <th>Available</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="wardsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div
+          class="card-header bg-white d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Beds</h5>
+          <button class="btn btn-sm btn-primary" onclick="openBedModal()">
+            Add Bed
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Ward</label>
+              <select
+                id="bedWardFilter"
+                class="form-select"
+                onchange="loadBeds()"
+              ></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select
+                id="bedStatusFilter"
+                class="form-select"
+                onchange="loadBeds()"
+              >
+                <option value="">All</option>
+                <option value="available">Available</option>
+                <option value="occupied">Occupied</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Bed</th>
+                  <th>Ward</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bedsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="wardModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="wardModalTitle">Add Ward</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="wardForm">
+          <input type="hidden" id="wardId" />
+          <div class="mb-3">
+            <label class="form-label">Ward Name</label>
+            <input id="wardName" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Total Beds</label>
+            <input
+              type="number"
+              min="1"
+              id="wardTotalBeds"
+              class="form-control"
+              required
+            />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveWard()">
+          Save Ward
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="bedModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bedModalTitle">Add Bed</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="bedForm">
+          <input type="hidden" id="bedId" />
+          <div class="mb-3">
+            <label class="form-label">Ward</label>
+            <select id="bedWard" class="form-select" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Bed Number</label>
+            <input id="bedNumber" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Bed Type</label>
+            <select id="bedType" class="form-select" required>
+              <option value="adult">Adult</option>
+              <option value="child">Child</option>
+              <option value="general">General</option>
+              <option value="icu">ICU</option>
+              <option value="private">Private</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select id="bedStatus" class="form-select" required>
+              <option value="available">Available</option>
+              <option value="occupied">Occupied</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveBed()">
+          Save Bed
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  const apiBase = "/api";
+
+  function showMessage(message, type = "warning") {
+    const box = document.getElementById("messageBox");
+    if (!box) return;
+    box.className = `alert alert-${type}`;
+    box.textContent = message;
+    box.classList.remove("d-none");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function clearMessage() {
+    const box = document.getElementById("messageBox");
+    if (!box) return;
+    box.textContent = "";
+    box.className = "alert d-none";
+  }
+
+  function requireAuth() {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login/";
+      return false;
+    }
+    return true;
+  }
+
+  function getHeaders() {
+    const token = localStorage.getItem("token");
+    return {
+      Authorization: `Token ${token}`,
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    };
+  }
+
+  function apiRequest(url, options = {}) {
+    const opts = {
+      ...options,
+      headers: {
+        ...getHeaders(),
+        ...(options.headers || {}),
+      },
+    };
+    return fetch(url, opts).then(async (response) => {
+      const text = await response.text();
+      let data = {};
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { detail: text };
+        }
+      }
+      if (!response.ok) {
+        throw new Error(data.error || data.detail || "Request failed");
+      }
+      return data;
+    });
+  }
+
+  function formatBedType(type) {
+    if (!type) return "—";
+
+    const normalized = String(type).toLowerCase();
+    if (normalized === "adult") return "Adult bed";
+    if (normalized === "child") return "Child bed";
+    return type;
+  }
+
+  async function loadWards() {
+    clearMessage();
+    try {
+      const data = await apiRequest(`${apiBase}/wards/?page_size=200`);
+      const rows = document.getElementById("wardsTableBody");
+      const bedFilter = document.getElementById("bedWardFilter");
+      const bedSelect = document.getElementById("bedWard");
+      rows.innerHTML = "";
+      bedFilter.innerHTML = '<option value="">All wards</option>';
+      bedSelect.innerHTML = '<option value="">Select ward</option>';
+      (data.results || data).forEach((ward) => {
+        bedFilter.insertAdjacentHTML(
+          "beforeend",
+          `<option value="${ward.id}">${ward.name}</option>`,
+        );
+        bedSelect.insertAdjacentHTML(
+          "beforeend",
+          `<option value="${ward.id}">${ward.name}</option>`,
+        );
+        rows.insertAdjacentHTML(
+          "beforeend",
+          `
+        <tr>
+          <td>${ward.name}</td>
+          <td>${ward.total_beds || 0}</td>
+          <td>${ward.available_beds || 0}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-2" onclick="editWard(${ward.id})">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteWard(${ward.id})">Delete</button>
+          </td>
+        </tr>`,
+        );
+      });
+
+      if (!rows.innerHTML) {
+        rows.innerHTML =
+          '<tr><td colspan="4" class="text-center">No wards found</td></tr>';
+      }
+    } catch (error) {
+      console.error("Error loading wards:", error);
+      document.getElementById("wardsTableBody").innerHTML =
+        '<tr><td colspan="4" class="text-center text-danger">Unable to load wards</td></tr>';
+      showMessage(error.message || "Unable to load wards.", "danger");
+    }
+  }
+
+  async function loadBeds() {
+    const ward = document.getElementById("bedWardFilter").value;
+    const status = document.getElementById("bedStatusFilter").value;
+    const params = new URLSearchParams();
+    if (ward) params.append("ward", ward);
+    if (status) params.append("status", status);
+
+    try {
+      const query = params.toString();
+      const data = await apiRequest(
+        `${apiBase}/beds/?${query ? `${query}&` : ""}page_size=200`,
+      );
+      const rows = document.getElementById("bedsTableBody");
+      rows.innerHTML = "";
+      (data.results || data).forEach((bed) => {
+        rows.insertAdjacentHTML(
+          "beforeend",
+          `
+        <tr>
+          <td>${bed.bed_number}</td>
+          <td>${bed.ward_name || bed.ward || "—"}</td>
+          <td>${formatBedType(bed.bed_type)}</td>
+          <td><span class="badge bg-${
+            bed.status === "available"
+              ? "success"
+              : bed.status === "occupied"
+                ? "secondary"
+                : "warning"
+          }">${bed.status || "unknown"}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-2" onclick="editBed(${bed.id})">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteBed(${bed.id})">Delete</button>
+          </td>
+        </tr>`,
+        );
+      });
+
+      if (!rows.innerHTML) {
+        rows.innerHTML =
+          '<tr><td colspan="5" class="text-center">No beds found</td></tr>';
+      }
+    } catch (error) {
+      console.error("Error loading beds:", error);
+      document.getElementById("bedsTableBody").innerHTML =
+        '<tr><td colspan="5" class="text-center text-danger">Unable to load beds</td></tr>';
+      showMessage(error.message || "Unable to load beds.", "danger");
+    }
+  }
+
+  function openWardModal() {
+    document.getElementById("wardForm").reset();
+    document.getElementById("wardId").value = "";
+    document.getElementById("wardModalTitle").textContent = "Add Ward";
+    new bootstrap.Modal(document.getElementById("wardModal")).show();
+  }
+
+  async function editWard(id) {
+    clearMessage();
+    try {
+      const ward = await apiRequest(`${apiBase}/wards/${id}/`);
+      document.getElementById("wardId").value = ward.id;
+      document.getElementById("wardName").value = ward.name || "";
+      document.getElementById("wardTotalBeds").value = ward.total_beds || 0;
+      document.getElementById("wardModalTitle").textContent = "Edit Ward";
+      new bootstrap.Modal(document.getElementById("wardModal")).show();
+    } catch (error) {
+      showMessage(error.message || "Failed to load ward details.", "danger");
+    }
+  }
+
+  async function saveWard() {
+    if (!requireAuth()) return;
+    clearMessage();
+    const id = document.getElementById("wardId").value;
+    const name = document.getElementById("wardName").value.trim();
+    const totalBeds = parseInt(
+      document.getElementById("wardTotalBeds").value,
+      10,
+    );
+
+    if (!name) {
+      showMessage("Ward name is required.", "warning");
+      return;
+    }
+
+    if (!Number.isFinite(totalBeds) || totalBeds < 1) {
+      showMessage("Total beds must be at least 1.", "warning");
+      return;
+    }
+
+    const payload = {
+      name,
+      total_beds: totalBeds,
+    };
+    const method = id ? "PUT" : "POST";
+    const url = id ? `${apiBase}/wards/${id}/` : `${apiBase}/wards/`;
+    try {
+      await apiRequest(url, { method, body: JSON.stringify(payload) });
+      bootstrap.Modal.getInstance(document.getElementById("wardModal")).hide();
+      await Promise.all([loadWards(), loadBeds()]);
+      showMessage(
+        id ? "Ward updated successfully." : "Ward added successfully.",
+        "success",
+      );
+    } catch (error) {
+      showMessage(error.message || "Failed to save ward.", "danger");
+    }
+  }
+
+  async function deleteWard(id) {
+    if (!requireAuth()) return;
+    if (!confirm("Delete this ward?")) return;
+    clearMessage();
+    try {
+      await apiRequest(`${apiBase}/wards/${id}/`, { method: "DELETE" });
+      await Promise.all([loadWards(), loadBeds()]);
+      showMessage("Ward deleted successfully.", "success");
+    } catch (error) {
+      showMessage(error.message || "Failed to delete ward.", "danger");
+    }
+  }
+
+  function openBedModal() {
+    document.getElementById("bedForm").reset();
+    document.getElementById("bedId").value = "";
+    document.getElementById("bedModalTitle").textContent = "Add Bed";
+    new bootstrap.Modal(document.getElementById("bedModal")).show();
+  }
+
+  async function editBed(id) {
+    clearMessage();
+    try {
+      const bed = await apiRequest(`${apiBase}/beds/${id}/`);
+      document.getElementById("bedId").value = bed.id;
+      document.getElementById("bedWard").value = bed.ward || "";
+      document.getElementById("bedNumber").value = bed.bed_number || "";
+      document.getElementById("bedType").value = bed.bed_type || "general";
+      document.getElementById("bedStatus").value = bed.status || "available";
+      document.getElementById("bedModalTitle").textContent = "Edit Bed";
+      new bootstrap.Modal(document.getElementById("bedModal")).show();
+    } catch (error) {
+      showMessage(error.message || "Failed to load bed details.", "danger");
+    }
+  }
+
+  async function saveBed() {
+    if (!requireAuth()) return;
+    clearMessage();
+    const id = document.getElementById("bedId").value;
+    const wardId = parseInt(document.getElementById("bedWard").value, 10);
+    const bedNumber = document.getElementById("bedNumber").value.trim();
+
+    if (!Number.isFinite(wardId)) {
+      showMessage("Please select a ward.", "warning");
+      return;
+    }
+
+    if (!bedNumber) {
+      showMessage("Bed number is required.", "warning");
+      return;
+    }
+
+    const payload = {
+      ward: wardId,
+      bed_number: bedNumber,
+      bed_type: document.getElementById("bedType").value,
+      status: document.getElementById("bedStatus").value,
+    };
+    const method = id ? "PUT" : "POST";
+    const url = id ? `${apiBase}/beds/${id}/` : `${apiBase}/beds/`;
+    try {
+      await apiRequest(url, { method, body: JSON.stringify(payload) });
+      bootstrap.Modal.getInstance(document.getElementById("bedModal")).hide();
+      await Promise.all([loadWards(), loadBeds()]);
+      showMessage(
+        id ? "Bed updated successfully." : "Bed added successfully.",
+        "success",
+      );
+    } catch (error) {
+      showMessage(error.message || "Failed to save bed.", "danger");
+    }
+  }
+
+  async function deleteBed(id) {
+    if (!requireAuth()) return;
+    if (!confirm("Delete this bed?")) return;
+    clearMessage();
+    try {
+      await apiRequest(`${apiBase}/beds/${id}/`, { method: "DELETE" });
+      await Promise.all([loadWards(), loadBeds()]);
+      showMessage("Bed deleted successfully.", "success");
+    } catch (error) {
+      showMessage(error.message || "Failed to delete bed.", "danger");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    if (!requireAuth()) return;
+    await loadWards();
+    await loadBeds();
+  });
+</script>
+{% endblock %}

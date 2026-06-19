@@ -1,0 +1,4 @@
+models:
+- title: Qwen Local
+    provider: ollama
+    model: qwen2.5-coder:latest

@@ -1,0 +1,125 @@
+{% extends "base.html" %} {% block title %}Register Patient - Hospital
+Management System{% endblock %} {% block content %}
+<div class="container-fluid py-4">
+  <div class="alert d-none" id="messageBox" role="alert"></div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h3 mb-1"><i class="fas fa-user-plus"></i> Register Patient</h1>
+      <p class="text-muted mb-0">
+        Create a new patient record using the shared hospital workflow.
+      </p>
+    </div>
+    <a href="/patients/" class="btn btn-outline-primary">Back to patients</a>
+  </div>
+
+  <div class="card p-4 mt-3">
+    <input class="form-control mb-2" id="first_name" placeholder="First Name" />
+    <input class="form-control mb-2" id="last_name" placeholder="Last Name" />
+
+    <select class="form-control mb-2" id="gender">
+      <option value="">Select Gender</option>
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+
+    <input type="date" class="form-control mb-2" id="dob" />
+    <input class="form-control mb-2" id="phone" placeholder="Phone" />
+    <input class="form-control mb-2" id="village" placeholder="Village" />
+    <input class="form-control mb-2" id="district" placeholder="District" />
+    <input
+      class="form-control mb-2"
+      id="address"
+      placeholder="Current Residence / Street Address"
+    />
+    <input
+      class="form-control mb-2"
+      id="next_of_kin_name"
+      placeholder="Next of Kin Name"
+    />
+    <input
+      class="form-control mb-2"
+      id="next_of_kin_phone"
+      placeholder="Next of Kin Phone"
+    />
+
+    <button class="btn btn-primary" onclick="addPatient()">Save Patient</button>
+  </div>
+
+  <script>
+    function showMessage(message, type = "warning") {
+      const box = document.getElementById("messageBox");
+      box.className = `alert alert-${type}`;
+      box.textContent = message;
+      box.classList.remove("d-none");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function clearMessage() {
+      const box = document.getElementById("messageBox");
+      box.textContent = "";
+      box.className = "alert d-none";
+    }
+
+    async function addPatient() {
+      const payload = {
+        first_name: document.getElementById("first_name").value.trim(),
+        last_name: document.getElementById("last_name").value.trim(),
+        gender: document.getElementById("gender").value,
+        dob: document.getElementById("dob").value,
+        phone: document.getElementById("phone").value.trim(),
+        village: document.getElementById("village").value.trim(),
+        district: document.getElementById("district").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        next_of_kin_name: document
+          .getElementById("next_of_kin_name")
+          .value.trim(),
+        next_of_kin_phone: document
+          .getElementById("next_of_kin_phone")
+          .value.trim(),
+      };
+
+      if (
+        !payload.first_name ||
+        !payload.last_name ||
+        !payload.gender ||
+        !payload.dob
+      ) {
+        showMessage(
+          "Please complete the required fields before saving.",
+          "warning",
+        );
+        return;
+      }
+
+      clearMessage();
+
+      try {
+        const response = await window.apiCall("/api/patients/", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || errorData.detail || "Unable to create patient.",
+          );
+        }
+
+        const createdPatient = await response.json().catch(() => ({}));
+        const createdId = createdPatient.id
+          ? `?created_id=${createdPatient.id}`
+          : "";
+        showMessage("Patient registered successfully!", "success");
+        setTimeout(() => {
+          window.location.replace(
+            `/patients/${createdId}${createdId ? "&" : "?"}refresh=${Date.now()}`,
+          );
+        }, 900);
+      } catch (error) {
+        showMessage(error.message || "Unable to create patient.", "danger");
+      }
+    }
+  </script>
+</div>
+{% endblock %}

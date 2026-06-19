@@ -1,0 +1,257 @@
+{% extends "base.html" %} {% block title %}Patients - Hospital Management
+System{% endblock %} {% block content %}
+<div class="container-fluid py-4">
+  <div class="alert d-none" id="messageBox" role="alert"></div>
+  <div class="page-header mb-3">
+    <div>
+      <h1><i class="fas fa-users me-2"></i>Patients</h1>
+      <p class="subtitle">
+        Search, review, and open patient records from the shared hospital
+        workspace.
+      </p>
+    </div>
+    <div class="page-actions">
+      <a href="/add-patient/" class="btn btn-primary d-none" id="addPatientBtn"
+        ><i class="fas fa-user-plus me-2"></i>Add patient</a
+      >
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        onclick="loadPatients()"
+      >
+        <i class="fas fa-sync-alt me-2"></i>Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="card p-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-8">
+        <label for="search" class="form-label">Search patients</label>
+        <input
+          type="text"
+          id="search"
+          class="form-control"
+          placeholder="Search by name, phone, or MRN"
+        />
+      </div>
+      <div class="col-md-4">
+        <button
+          type="button"
+          id="searchBtn"
+          class="btn btn-primary w-100"
+          onclick="loadPatients()"
+        >
+          Search
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4 overflow-hidden">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Gender</th>
+              <th>Phone</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="patientsTable">
+            <tr>
+              <td colspan="5" class="text-center py-4">
+                Loading patient records...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  const role = (localStorage.getItem("role") || "staff").toLowerCase();
+  const canWritePatients = ["mrc", "admin"].includes(role);
+
+  function apiRequest(url, options = {}) {
+    if (typeof window.apiCall === "function") {
+      return window.apiCall(url, options);
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login/";
+      return Promise.reject(new Error("No token"));
+    }
+
+    const headers = {
+      Authorization: `Token ${token}`,
+      "Content-Type": "application/json",
+      ...options.headers,
+    };
+
+    return fetch(url, { ...options, headers });
+  }
+
+  async function getApiErrorMessage(
+    response,
+    defaultMessage,
+    permissionMessage,
+  ) {
+    if (response.status === 401) {
+      return "Your session has expired. Please sign in again.";
+    }
+
+    if (response.status === 403) {
+      return (
+        permissionMessage ||
+        "You do not have permission to perform this action."
+      );
+    }
+
+    const errorData = await response.json().catch(() => ({}));
+    return errorData.error || errorData.detail || defaultMessage;
+  }
+
+  function showMessage(message, type = "warning") {
+    const box = document.getElementById("messageBox");
+    box.className = `alert alert-${type}`;
+    box.textContent = message;
+    box.classList.remove("d-none");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function clearMessage() {
+    const box = document.getElementById("messageBox");
+    box.textContent = "";
+    box.className = "alert d-none";
+  }
+
+  async function loadPatients() {
+    const search = document.getElementById("search").value;
+    const table = document.getElementById("patientsTable");
+    clearMessage();
+
+    table.innerHTML =
+      '<tr><td colspan="5" class="text-center py-4">Loading patient records...</td></tr>';
+
+    try {
+      const response = await apiRequest(
+        `/api/patients/?search=${encodeURIComponent(search)}&ordering=-created_at&_ts=${Date.now()}`,
+        { cache: "no-store" },
+      );
+      if (!response.ok) {
+        throw new Error(
+          await getApiErrorMessage(
+            response,
+            "Unable to load patients.",
+            "You do not have permission to view patient records.",
+          ),
+        );
+      }
+
+      const data = await response.json();
+      const patients = data.results || data;
+
+      if (!Array.isArray(patients) || patients.length === 0) {
+        table.innerHTML =
+          '<tr><td colspan="5" class="text-center py-4">No patients match your search.</td></tr>';
+        return;
+      }
+
+      table.innerHTML = patients
+        .map(
+          (patient) => `
+            <tr>
+              <td>${patient.id}</td>
+              <td>
+                <strong>${patient.first_name || ""} ${patient.last_name || ""}</strong>
+                <div class="text-muted small">${patient.mrn || "MRN pending"}</div>
+              </td>
+              <td>${patient.gender || "—"}</td>
+              <td>${patient.phone || "—"}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary me-2" onclick="viewPatient(${patient.id})">
+                  <i class="fas fa-eye me-1"></i>View
+                </button>
+                ${
+                  canWritePatients
+                    ? `
+                <button class="btn btn-sm btn-warning me-2" onclick="editPatient(${patient.id})">
+                  <i class="fas fa-edit me-1"></i>Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deletePatient(${patient.id})">
+                  <i class="fas fa-trash me-1"></i>Delete
+                </button>
+                `
+                    : ""
+                }
+              </td>
+            </tr>
+          `,
+        )
+        .join("");
+    } catch (error) {
+      table.innerHTML =
+        '<tr><td colspan="5" class="text-center py-4">Unable to load patient records right now.</td></tr>';
+      showMessage(error.message || "Unable to load patient records.", "danger");
+    }
+  }
+
+  async function deletePatient(id) {
+    if (!confirm("Delete this patient record?")) {
+      return;
+    }
+
+    clearMessage();
+
+    try {
+      const response = await apiRequest(`/api/patients/${id}/`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await getApiErrorMessage(
+            response,
+            "Unable to delete patient.",
+            "You do not have permission to delete patient records.",
+          ),
+        );
+      }
+
+      showMessage("Patient deleted successfully.", "success");
+      await loadPatients();
+    } catch (error) {
+      showMessage(error.message || "Unable to delete patient.", "danger");
+    }
+  }
+
+  function viewPatient(id) {
+    window.location.href = `/patient-details/?id=${id}`;
+  }
+
+  function editPatient(id) {
+    window.location.href = `/edit-patient/?id=${id}`;
+  }
+
+  const addPatientBtn = document.getElementById("addPatientBtn");
+  if (addPatientBtn) {
+    addPatientBtn.classList.toggle("d-none", !canWritePatients);
+  }
+
+  document.getElementById("search").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      loadPatients();
+    }
+  });
+
+  loadPatients();
+</script>
+{% endblock %}

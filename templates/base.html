@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Hospital Management System{% endblock %}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #14395f;
+        --secondary-color: #1f4e7a;
+        --accent-color: #3498db;
+        --accent-soft: #2fc1b6;
+        --success-color: #16a34a;
+        --danger-color: #dc2626;
+        --warning-color: #d97706;
+        --surface-color: #ffffff;
+        --surface-muted: #f8fbff;
+        --border-color: rgba(148, 163, 184, 0.18);
+        --shadow-color: 0 18px 42px rgba(15, 23, 42, 0.08);
+        --text-color: #0f172a;
+        --muted-color: #5f6f7f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: linear-gradient(180deg, #f4f7fb 0%, #eef4fb 100%);
+        color: var(--text-color);
+        font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      .navbar {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--secondary-color) 100%
+        );
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 22px rgba(20, 57, 95, 0.14);
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+      }
+
+      .navbar-brand {
+        font-weight: 800;
+        font-size: 1.35rem;
+        letter-spacing: 0.01em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .navbar-brand .brand-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+      }
+
+      .sidebar {
+        background: linear-gradient(
+          180deg,
+          #0f172a 0%,
+          var(--primary-color) 100%
+        );
+        color: #fff;
+        min-height: calc(100vh - 72px);
+        padding: 1.25rem 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        position: sticky;
+        top: 72px;
+        align-self: flex-start;
+        max-height: calc(100vh - 72px);
+        overflow-y: auto;
+      }
+
+      .sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.86);
+        padding: 0.9rem 1.1rem;
+        border-left: 3px solid transparent;
+        border-radius: 0 999px 999px 0;
+        margin-right: 0.75rem;
+        transition: all 0.2s ease;
+        font-weight: 600;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border-left-color: var(--accent-color);
+      }
+
+      .sidebar .nav-link i {
+        margin-right: 10px;
+        width: 20px;
+      }
+
+      .main-content {
+        padding: 2.5rem 1.5rem 3rem;
+        min-height: calc(100vh - 72px);
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .main-content h1,
+      .main-content h2 {
+        font-weight: 800;
+        color: var(--text-color);
+        margin-bottom: 0.15rem;
+      }
+
+      .main-content h1 {
+        font-size: 1.9rem;
+      }
+
+      .main-content h2 {
+        font-size: 1.6rem;
+      }
+
+      .main-content p.text-muted {
+        color: var(--muted-color) !important;
+      }
+
+      .main-content hr {
+        border-color: rgba(148, 163, 184, 0.2);
+        margin: 0.75rem 0 1.1rem;
+        opacity: 1;
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .page-header .subtitle {
+        color: var(--muted-color);
+        margin-bottom: 0;
+      }
+
+      .page-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .filter-section,
+      .card,
+      .modal-content {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: 22px;
+        box-shadow: var(--shadow-color);
+      }
+
+      .filter-section {
+        padding: 1.1rem 1.2rem;
+      }
+
+      .card {
+        margin-bottom: 0;
+      }
+
+      .card-header {
+        background: transparent;
+        color: var(--text-color);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.1rem 1.25rem;
+        font-weight: 800;
+      }
+
+      .card-body {
+        padding: 1.25rem;
+      }
+
+      .btn {
+        border-radius: 999px;
+        font-weight: 800;
+        padding: 0.75rem 1.1rem;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease,
+          filter 0.12s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--accent-color) 100%
+        );
+        border: 0;
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        filter: brightness(1.05);
+      }
+
+      .btn-secondary,
+      .btn-outline-secondary,
+      .btn-outline-primary {
+        background-color: #fff;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+      }
+
+      .btn-outline-primary {
+        color: var(--primary-color);
+      }
+
+      .btn-info {
+        background: linear-gradient(
+          135deg,
+          var(--accent-color) 0%,
+          var(--accent-soft) 100%
+        );
+        color: #fff;
+        border: 0;
+      }
+
+      .form-control,
+      .form-select,
+      textarea {
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        padding: 0.8rem 0.9rem;
+        box-shadow: none;
+        background: #fff;
+      }
+
+      .form-control:focus,
+      .form-select:focus,
+      textarea:focus {
+        border-color: rgba(52, 152, 219, 0.55);
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.12);
+      }
+
+      .form-label {
+        color: var(--text-color);
+        font-weight: 700;
+        margin-bottom: 0.45rem;
+      }
+
+      .table-responsive {
+        background: transparent;
+        border-radius: 20px;
+        overflow: hidden;
+      }
+
+      .table {
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      .table thead th {
+        background: linear-gradient(
+          180deg,
+          var(--surface-muted) 0%,
+          #eef4fb 100%
+        );
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-color);
+        font-weight: 800;
+        padding: 0.95rem 1rem;
+      }
+
+      .table tbody td {
+        padding: 0.95rem 1rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        color: var(--text-color);
+        vertical-align: middle;
+      }
+
+      .table tbody tr:hover {
+        background: rgba(52, 152, 219, 0.08);
+      }
+
+      .table-striped > tbody > tr:nth-of-type(odd) > * {
+        background-color: rgba(248, 251, 255, 0.55);
+      }
+
+      .status-pill,
+      .status-badge,
+      .role-badge,
+      .visit-badge,
+      .bed-status,
+      .stock-badge,
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 999px;
+        padding: 0.35rem 0.8rem;
+        font-size: 0.8rem;
+        font-weight: 800;
+        line-height: 1.2;
+        border: 1px solid transparent;
+      }
+
+      .badge {
+        padding: 0.4rem 0.8rem;
+      }
+
+      .status-pill.success,
+      .status-badge.paid,
+      .role-badge.staff,
+      .visit-badge.completed,
+      .bed-status.vacant,
+      .stock-badge.good {
+        background: #ecfdf3;
+        color: #166534;
+      }
+
+      .status-pill.warning,
+      .status-badge.pending,
+      .role-badge.nurse,
+      .visit-badge.scheduled,
+      .stock-badge.medium,
+      .bed-status.maintenance {
+        background: #fff7ed;
+        color: #9a3412;
+      }
+
+      .status-pill.danger,
+      .status-badge.partial,
+      .role-badge.admin,
+      .visit-badge.cancelled,
+      .stock-badge.low,
+      .bed-status.occupied {
+        background: #fef2f2;
+        color: #991b1b;
+      }
+
+      .status-badge.admitted,
+      .role-badge.doctor,
+      .status-pill.info {
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+
+      .role-badge.heo,
+      .role-badge.mrc,
+      .status-badge.discharged {
+        background: #f0fdf4;
+        color: #166534;
+      }
+
+      .pagination {
+        margin-top: 1rem;
+      }
+
+      .pagination .page-link {
+        border-radius: 999px;
+        margin: 0 0.15rem;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        font-weight: 700;
+      }
+
+      .pagination .page-item.active .page-link {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--accent-color) 100%
+        );
+        border-color: transparent;
+        color: #fff;
+      }
+
+      .nav-tabs {
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .nav-tabs .nav-link {
+        border: 0;
+        border-radius: 18px 18px 0 0;
+        color: var(--muted-color);
+        font-weight: 800;
+      }
+
+      .nav-tabs .nav-link.active {
+        background: rgba(52, 152, 219, 0.1);
+        color: var(--primary-color);
+      }
+
+      .modal-content {
+        border-radius: 24px;
+      }
+
+      .modal-header,
+      .modal-footer {
+        border-color: var(--border-color);
+      }
+
+      .modal-header {
+        padding: 1.1rem 1.2rem;
+      }
+
+      .modal-body {
+        padding: 1.2rem;
+      }
+
+      .footer {
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          var(--primary-color) 100%
+        );
+        color: #fff;
+        padding: 1.1rem 1.2rem;
+        text-align: center;
+      }
+
+      .footer p {
+        margin-bottom: 0;
+      }
+
+      .alert-custom {
+        border: 0;
+        border-radius: 18px;
+        padding: 1rem 1.1rem;
+      }
+
+      @media (max-width: 991.98px) {
+        .main-content {
+          padding: 1.25rem;
+        }
+
+        .sidebar {
+          min-height: auto;
+          position: static;
+          top: auto;
+          max-height: none;
+          overflow-y: visible;
+        }
+      }
+    </style>
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard/">
+          <img
+            src="/static/images/background.png"
+            alt="Hospital logo"
+            class="brand-logo"
+          />
+          <span>Hospital Management System</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <span class="nav-link" style="cursor: default">
+                <i class="fas fa-user"></i> <span id="navUsername">User</span>
+              </span>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="userDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+              >
+                <i class="fas fa-user-circle"></i> More
+              </a>
+              <ul
+                class="dropdown-menu dropdown-menu-end"
+                aria-labelledby="userDropdown"
+              >
+                <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                <li><a class="dropdown-item" href="/settings">Settings</a></li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <form
+                    id="dropdownLogoutForm"
+                    method="post"
+                    action="{% url 'logout' %}"
+                    class="m-0"
+                  >
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item">
+                      <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                  </form>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <form
+            id="logoutForm"
+            method="post"
+            action="{% url 'logout' %}"
+            class="d-flex align-items-center ms-lg-3 mt-2 mt-lg-0"
+          >
+            {% csrf_token %}
+            <button
+              type="submit"
+              class="btn btn-outline-light btn-sm"
+              title="Sign out"
+            >
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+          </form>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar" id="sidebar">
+          <div class="position-sticky pt-3">
+            <ul class="nav flex-column">
+              <!-- Dashboard (visible to: doctor, nurse, mrc, heo, admin) -->
+              <li class="nav-item nav-dashboard">
+                <a class="nav-link" href="/dashboard/">
+                  <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+              </li>
+
+              <!-- Patients (visible to: doctor, nurse, mrc) -->
+              <li class="nav-item nav-patients">
+                <a class="nav-link" href="/patients/">
+                  <i class="fas fa-users"></i> Patients
+                </a>
+              </li>
+
+              <!-- Visits (visible to: doctor, nurse, mrc, heo) -->
+              <li class="nav-item nav-visits">
+                <a class="nav-link" href="/visits/">
+                  <i class="fas fa-calendar"></i> Visits
+                </a>
+              </li>
+
+              <!-- Admissions (visible to: doctor, nurse, mrc) -->
+              <li class="nav-item nav-admissions">
+                <a class="nav-link" href="/admissions/">
+                  <i class="fas fa-bed"></i> Admissions
+                </a>
+              </li>
+
+              <!-- Billing (visible to: doctor) -->
+              <li class="nav-item nav-billing">
+                <a class="nav-link" href="/billing/">
+                  <i class="fas fa-receipt"></i> Billing
+                </a>
+              </li>
+
+              <!-- Ward & Bed (visible to: doctor) -->
+              <li class="nav-item nav-wards">
+                <a class="nav-link" href="/wards/">
+                  <i class="fas fa-hospital"></i> Ward & Bed Management
+                </a>
+              </li>
+
+              <!-- Consents (visible to: doctor, heo) -->
+              <li class="nav-item nav-consents">
+                <a class="nav-link" href="/consents/">
+                  <i class="fas fa-file-signature"></i> Consent & Authorization
+                </a>
+              </li>
+
+              <!-- Pharmacy (visible to: doctor, heo) -->
+              <li class="nav-item nav-pharmacy">
+                <a class="nav-link" href="/pharmacy/">
+                  <i class="fas fa-pills"></i> Pharmacy
+                </a>
+              </li>
+
+              <!-- Laboratory (visible to: doctor, heo) -->
+              <li class="nav-item nav-lab">
+                <a class="nav-link" href="/lab/">
+                  <i class="fas fa-flask"></i> Laboratory
+                </a>
+              </li>
+
+              <!-- Users (visible to: doctor, admin) -->
+              <li class="nav-item nav-users">
+                <a class="nav-link" href="/users/">
+                  <i class="fas fa-user-cog"></i> Users
+                </a>
+              </li>
+
+              <!-- Admin Dashboard (visible to: admin, doctor) -->
+              <li class="nav-item nav-admin-dashboard">
+                <a class="nav-link" href="/admin-dashboard/">
+                  <i class="fas fa-shield-alt"></i> Admin Dashboard
+                </a>
+              </li>
+
+              <!-- Role-specific pages -->
+              <li class="nav-item nav-doctor-page">
+                <a class="nav-link" href="/doctor/">
+                  <i class="fas fa-user-md"></i> Doctor
+                </a>
+              </li>
+              <li class="nav-item nav-nurse-page">
+                <a class="nav-link" href="/nurse/">
+                  <i class="fas fa-user-nurse"></i> Nurse
+                </a>
+              </li>
+              <li class="nav-item nav-heo-page">
+                <a class="nav-link" href="/heo/">
+                  <i class="fas fa-user-tie"></i> HEO
+                </a>
+              </li>
+              <li class="nav-item nav-mrc-page">
+                <a class="nav-link" href="/mrc/">
+                  <i class="fas fa-notes-medical"></i> MRC
+                </a>
+              </li>
+            </ul>
+          </div>
+        </nav>
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+          {% block content %}
+          <!-- Page content goes here -->
+          {% endblock %}
+        </main>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>&copy; 2026 Hospital Management System. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+      // Role-based navigation visibility
+      function updateNavigationByRole() {
+        const role = (localStorage.getItem("role") || "staff").toLowerCase();
+
+        // Define which nav items are visible for each role
+        const roleNavMap = {
+          doctor: [
+            ".nav-dashboard",
+            ".nav-patients",
+            ".nav-visits",
+            ".nav-admissions",
+            ".nav-billing",
+            ".nav-wards",
+            ".nav-consents",
+            ".nav-pharmacy",
+            ".nav-lab",
+            ".nav-users",
+            ".nav-admin-dashboard",
+            ".nav-doctor-page",
+          ],
+          nurse: [
+            ".nav-dashboard",
+            ".nav-patients",
+            ".nav-visits",
+            ".nav-admissions",
+            ".nav-nurse-page",
+          ],
+          mrc: [
+            ".nav-dashboard",
+            ".nav-patients",
+            ".nav-visits",
+            ".nav-admissions",
+            ".nav-mrc-page",
+          ],
+          heo: [
+            ".nav-dashboard",
+            ".nav-visits",
+            ".nav-consents",
+            ".nav-pharmacy",
+            ".nav-lab",
+            ".nav-heo-page",
+          ],
+          admin: [
+            ".nav-dashboard",
+            ".nav-patients",
+            ".nav-visits",
+            ".nav-admissions",
+            ".nav-billing",
+            ".nav-wards",
+            ".nav-consents",
+            ".nav-pharmacy",
+            ".nav-lab",
+            ".nav-users",
+            ".nav-admin-dashboard",
+          ],
+          pharmacy: [".nav-pharmacy"],
+          lab: [".nav-lab"],
+        };
+
+        // Get visible items for this role
+        const visibleItems = roleNavMap[role] || [];
+
+        // Hide all nav items first
+        const allNavItems = document.querySelectorAll(".nav-item");
+        allNavItems.forEach((item) => {
+          item.classList.add("d-none");
+        });
+
+        // Show only visible items for this role
+        visibleItems.forEach((selector) => {
+          const items = document.querySelectorAll(selector);
+          items.forEach((item) => {
+            item.classList.remove("d-none");
+          });
+        });
+      }
+
+      // Logout handler function
+      function handleLogout(e) {
+        // Show logout confirmation (optional)
+        if (!confirm("Are you sure you want to logout?")) {
+          e.preventDefault();
+          return;
+        }
+        // Clear all stored data
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+
+      // Make all sidebar nav links token-aware
+      function attachTokenToNavLinks() {
+        // Select all sidebar navigation links
+        const navLinks = document.querySelectorAll("#sidebar .nav-link");
+        navLinks.forEach(function (link) {
+          link.addEventListener("click", function (e) {
+            e.preventDefault();
+            const href = link.getAttribute("href");
+            if (!href || href === "#") return;
+
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+              window.location.href = "/login";
+              return;
+            }
+
+            // Always carry token for token-authorized page views.
+            const nextUrl = new URL(href, window.location.origin);
+            nextUrl.searchParams.set("token", token);
+            window.location.href = nextUrl.pathname + nextUrl.search;
+          });
+        });
+      }
+
+      // All initialization logic runs once on DOMContentLoaded
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          window.location.href = "/login";
+          return;
+        }
+
+        // Update user display in navbar
+        const username = localStorage.getItem("username");
+        const navUsername = document.getElementById("navUsername");
+        if (navUsername && username) {
+          navUsername.textContent = username;
+        }
+
+        // Update navigation based on user role
+        updateNavigationByRole();
+
+        // Ensure sidebar links preserve token auth on every page.
+        attachTokenToNavLinks();
+
+        // Handle internal navigation logic
+        document.body.addEventListener("click", function (e) {
+          const link = e.target.closest("a");
+          if (link) {
+            const href = link.getAttribute("href");
+            const normalizePath = (path) => {
+              if (!path) return path;
+              if (path !== "/" && path.endsWith("/")) {
+                return path.slice(0, -1);
+              }
+              return path;
+            };
+
+            let linkPath = href;
+            if (
+              href &&
+              !href.startsWith("#") &&
+              !href.startsWith("javascript:")
+            ) {
+              try {
+                linkPath = new URL(href, window.location.origin).pathname;
+              } catch {
+                linkPath = href;
+              }
+            }
+
+            const normHref = normalizePath(linkPath);
+            const normPath = normalizePath(window.location.pathname);
+
+            if (
+              normHref === normPath &&
+              normHref &&
+              !normHref.startsWith("#")
+            ) {
+              e.preventDefault();
+              window.location.reload();
+            }
+          }
+        });
+
+        // Bind logout forms
+        const logoutForm = document.getElementById("logoutForm");
+        if (logoutForm) {
+          logoutForm.addEventListener("submit", handleLogout);
+        }
+
+        const dropdownLogoutForm =
+          document.getElementById("dropdownLogoutForm");
+        if (dropdownLogoutForm) {
+          dropdownLogoutForm.addEventListener("submit", handleLogout);
+        }
+      });
+
+      // Global helper to make authenticated API calls
+      window.apiCall = function (url, options = {}) {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          window.location.href = "/login";
+          return Promise.reject("No token");
+        }
+
+        const headers = {
+          Authorization: "Token " + token,
+          "Content-Type": "application/json",
+          ...options.headers,
+        };
+
+        return fetch(url, {
+          ...options,
+          headers: headers,
+        });
+      };
+    </script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

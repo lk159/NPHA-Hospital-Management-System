@@ -1,0 +1,650 @@
+{% extends "base.html" %} {% block title %}Billing - Hospital Management
+System{% endblock %} {% block content %}
+<div class="main-content">
+  <div class="alert d-none" id="messageBox" role="alert"></div>
+  <h2><i class="fas fa-receipt"></i> Billing Management</h2>
+  <hr />
+
+  <!-- Filter Section -->
+  <div class="filter-section">
+    <div class="row">
+      <div class="col-md-4">
+        <input
+          type="text"
+          id="searchInvoice"
+          class="form-control"
+          placeholder="Search by invoice number or patient..."
+        />
+      </div>
+      <div class="col-md-2">
+        <select id="statusFilter" class="form-control">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="partial">Partial</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <input type="date" id="dateFilter" class="form-control" />
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-secondary w-100" onclick="filterBilling()">
+          <i class="fas fa-filter"></i> Filter
+        </button>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-info w-100" onclick="generateReport()">
+          <i class="fas fa-download"></i> Report
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Invoice Button -->
+  <div class="mb-3">
+    <button
+      class="btn btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#invoiceModal"
+    >
+      <i class="fas fa-plus"></i> New Invoice
+    </button>
+  </div>
+
+  <!-- Billing Table -->
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Patient</th>
+          <th>Date</th>
+          <th>Total Amount</th>
+          <th>Paid Amount</th>
+          <th>Balance</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="billingTable">
+        <tr>
+          <td colspan="8" class="text-center">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center" id="pagination"></ul>
+  </nav>
+</div>
+
+<!-- Add/Edit Invoice Modal -->
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="invoiceModalTitle">New Invoice</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="invoiceForm">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="patient_id" class="form-label">Patient *</label>
+                <select id="patient_id" class="form-control" required>
+                  <option value="">Select Patient</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="invoice_date" class="form-label"
+                  >Invoice Date *</label
+                >
+                <input
+                  type="date"
+                  id="invoice_date"
+                  class="form-control"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="admission_id" class="form-label">Admission</label>
+                <select id="admission_id" class="form-control">
+                  <option value="">Select Admission</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="amount" class="form-label">Total Amount *</label>
+                <input
+                  type="number"
+                  id="amount"
+                  class="form-control"
+                  step="0.01"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="description" class="form-label"
+              >Description/Items</label
+            >
+            <textarea
+              id="description"
+              class="form-control"
+              rows="3"
+              placeholder="List billable items"
+            ></textarea>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="invoice_status" class="form-label">Status</label>
+                <select id="invoice_status" class="form-control">
+                  <option value="pending">Pending</option>
+                  <option value="partial">Partial</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="due_date" class="form-label">Due Date</label>
+                <input type="date" id="due_date" class="form-control" />
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <textarea
+              id="notes"
+              class="form-control"
+              rows="2"
+              placeholder="Payment terms or special notes"
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveInvoice()">
+          Save Invoice
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Invoice Modal -->
+<div class="modal fade" id="viewInvoiceModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Invoice Details</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="viewInvoiceContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-info" onclick="printInvoice()">
+          <i class="fas fa-print"></i> Print
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Record Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Record Payment</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="payment_amount" class="form-label"
+            >Payment Amount *</label
+          >
+          <input
+            type="number"
+            id="payment_amount"
+            class="form-control"
+            step="0.01"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="payment_date" class="form-label">Payment Date *</label>
+          <input type="date" id="payment_date" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label for="payment_method" class="form-label">Payment Method</label>
+          <select id="payment_method" class="form-control">
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="cheque">Cheque</option>
+            <option value="bank_transfer">Bank Transfer</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="payment_ref" class="form-label"
+            >Reference/Receipt #</label
+          >
+          <input type="text" id="payment_ref" class="form-control" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-success" onclick="recordPayment()">
+          Record Payment
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block extra_js %}
+<script>
+  const API_URL = "http://127.0.0.1:8000/api";
+  const token = localStorage.getItem("token");
+  let currentPage = 1;
+  let editingId = null;
+  let paymentInvoiceId = null;
+
+  function showMessage(message, type = "warning") {
+    const box = document.getElementById("messageBox");
+    if (!box) return;
+    box.className = `alert alert-${type}`;
+    box.textContent = message;
+    box.classList.remove("d-none");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function clearMessage() {
+    const box = document.getElementById("messageBox");
+    if (!box) return;
+    box.textContent = "";
+    box.className = "alert d-none";
+  }
+
+  if (!token) {
+    showMessage("Login required", "warning");
+    window.location.href = "/login";
+  }
+
+  // Initialize
+  document.addEventListener("DOMContentLoaded", function () {
+    loadPatients();
+    loadAdmissions();
+    loadBilling();
+    document.getElementById("invoice_date").valueAsDate = new Date();
+    document.getElementById("payment_date").valueAsDate = new Date();
+  });
+
+  // Load patients
+  function loadPatients() {
+    fetch(`${API_URL}/patients/`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const select = document.getElementById("patient_id");
+        select.innerHTML = '<option value="">Select Patient</option>';
+        (Array.isArray(data) ? data : data.results || []).forEach((p) => {
+          select.innerHTML += `<option value="${p.id}">${p.first_name} ${p.last_name}</option>`;
+        });
+      });
+  }
+
+  // Load admissions
+  function loadAdmissions() {
+    fetch(`${API_URL}/admissions/`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const select = document.getElementById("admission_id");
+        (Array.isArray(data) ? data : data.results || []).forEach((a) => {
+          select.innerHTML += `<option value="${a.id}">${a.patient_name} - ${a.admission_date}</option>`;
+        });
+      });
+  }
+
+  // Load billing/invoices
+  function loadBilling() {
+    clearMessage();
+    const search = document.getElementById("searchInvoice").value;
+    const status = document.getElementById("statusFilter").value;
+    const date = document.getElementById("dateFilter").value;
+
+    let url = `${API_URL}/billing/?page=${currentPage}`;
+    if (search) url += `&search=${search}`;
+    if (status) url += `&status=${status}`;
+    if (date) url += `&date=${date}`;
+
+    fetch(url, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const billing = Array.isArray(data) ? data : data.results || [];
+        renderBilling(billing);
+        if (data.total_pages) {
+          renderPagination(data.total_pages);
+        }
+      })
+      .catch((err) => {
+        console.error("Error loading billing:", err);
+        document.getElementById("billingTable").innerHTML =
+          '<tr><td colspan="8" class="text-center text-danger">Error loading billing data</td></tr>';
+        showMessage("Unable to load billing data right now.", "danger");
+      });
+  }
+
+  // Render billing table
+  function renderBilling(invoices) {
+    const table = document.getElementById("billingTable");
+    if (!invoices || invoices.length === 0) {
+      table.innerHTML =
+        '<tr><td colspan="8" class="text-center">No invoices found</td></tr>';
+      return;
+    }
+
+    table.innerHTML = invoices
+      .map((inv) => {
+        const balance = (inv.amount || 0) - (inv.paid_amount || 0);
+        return `
+      <tr>
+        <td><strong>#${inv.invoice_number || inv.id}</strong></td>
+        <td>${inv.patient_name || "N/A"}</td>
+        <td>${new Date(inv.invoice_date).toLocaleDateString()}</td>
+        <td class="amount">$${parseFloat(inv.amount || 0).toFixed(2)}</td>
+        <td class="amount">$${parseFloat(inv.paid_amount || 0).toFixed(2)}</td>
+        <td class="amount text-danger">$${balance.toFixed(2)}</td>
+        <td>
+          <span class="status-badge ${inv.status}">
+            ${inv.status}
+          </span>
+        </td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-sm btn-info" onclick="viewInvoice(${inv.id})">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-warning" onclick="editInvoice(${inv.id})">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-success" onclick="initiatePayment(${inv.id})">
+              <i class="fas fa-money-bill"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteInvoice(${inv.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+      })
+      .join("");
+  }
+
+  // Filter billing
+  function filterBilling() {
+    currentPage = 1;
+    loadBilling();
+  }
+
+  // View invoice
+  function viewInvoice(id) {
+    fetch(`${API_URL}/billing/${id}/`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((inv) => {
+        const balance = (inv.amount || 0) - (inv.paid_amount || 0);
+        const content = `
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <p><strong>Invoice #:</strong> ${inv.invoice_number || inv.id}</p>
+              <p><strong>Patient:</strong> ${inv.patient_name}</p>
+              <p><strong>Invoice Date:</strong> ${new Date(inv.invoice_date).toLocaleDateString()}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Due Date:</strong> ${inv.due_date ? new Date(inv.due_date).toLocaleDateString() : "N/A"}</p>
+              <p><strong>Status:</strong> <span class="status-badge ${inv.status}">${inv.status}</span></p>
+            </div>
+          </div>
+          <hr>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <p><strong>Total Amount:</strong> <span class="amount">$${parseFloat(inv.amount || 0).toFixed(2)}</span></p>
+              <p><strong>Paid Amount:</strong> <span class="amount">$${parseFloat(inv.paid_amount || 0).toFixed(2)}</span></p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Balance:</strong> <span class="amount text-danger">$${balance.toFixed(2)}</span></p>
+            </div>
+          </div>
+          ${
+            inv.description
+              ? `
+            <hr>
+            <p><strong>Items:</strong></p>
+            <p>${inv.description}</p>
+          `
+              : ""
+          }
+          ${
+            inv.notes
+              ? `
+            <hr>
+            <p><strong>Notes:</strong></p>
+            <p>${inv.notes}</p>
+          `
+              : ""
+          }
+        `;
+        document.getElementById("viewInvoiceContent").innerHTML = content;
+        new bootstrap.Modal(document.getElementById("viewInvoiceModal")).show();
+      });
+  }
+
+  // Edit invoice
+  function editInvoice(id) {
+    fetch(`${API_URL}/billing/${id}/`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((inv) => {
+        editingId = id;
+        document.getElementById("invoiceModalTitle").textContent =
+          "Edit Invoice";
+        document.getElementById("patient_id").value = inv.patient;
+        document.getElementById("invoice_date").value = inv.invoice_date;
+        document.getElementById("admission_id").value = inv.admission || "";
+        document.getElementById("amount").value = inv.amount;
+        document.getElementById("description").value = inv.description || "";
+        document.getElementById("invoice_status").value = inv.status;
+        document.getElementById("due_date").value = inv.due_date || "";
+        document.getElementById("notes").value = inv.notes || "";
+        new bootstrap.Modal(document.getElementById("invoiceModal")).show();
+      });
+  }
+
+  // Save invoice
+  function saveInvoice() {
+    const data = {
+      patient: document.getElementById("patient_id").value,
+      invoice_date: document.getElementById("invoice_date").value,
+      admission: document.getElementById("admission_id").value || null,
+      amount: parseFloat(document.getElementById("amount").value),
+      description: document.getElementById("description").value,
+      status: document.getElementById("invoice_status").value,
+      due_date: document.getElementById("due_date").value || null,
+      notes: document.getElementById("notes").value,
+    };
+
+    const method = editingId ? "PUT" : "POST";
+    const url = editingId
+      ? `${API_URL}/billing/${editingId}/`
+      : `${API_URL}/billing/`;
+
+    fetch(url, {
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
+      },
+      body: JSON.stringify(data),
+    })
+      .then((res) => {
+        if (res.ok) {
+          showMessage("Invoice saved successfully!", "success");
+          resetForm();
+          loadBilling();
+          bootstrap.Modal.getInstance(
+            document.getElementById("invoiceModal"),
+          ).hide();
+        } else {
+          showMessage("Error saving invoice", "danger");
+        }
+      })
+      .catch((err) => {
+        console.error("Error:", err);
+        showMessage("Error saving invoice", "danger");
+      });
+  }
+
+  // Initiate payment
+  function initiatePayment(id) {
+    paymentInvoiceId = id;
+    document.getElementById("payment_date").valueAsDate = new Date();
+    new bootstrap.Modal(document.getElementById("paymentModal")).show();
+  }
+
+  // Record payment
+  function recordPayment() {
+    const data = {
+      invoice: paymentInvoiceId,
+      amount: parseFloat(document.getElementById("payment_amount").value),
+      payment_date: document.getElementById("payment_date").value,
+      payment_method: document.getElementById("payment_method").value,
+      reference: document.getElementById("payment_ref").value,
+    };
+
+    fetch(`${API_URL}/payments/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
+      },
+      body: JSON.stringify(data),
+    }).then((res) => {
+      if (res.ok) {
+        showMessage("Payment recorded successfully!", "success");
+        loadBilling();
+        bootstrap.Modal.getInstance(
+          document.getElementById("paymentModal"),
+        ).hide();
+        document.getElementById("paymentForm").reset();
+      } else {
+        showMessage("Error recording payment", "danger");
+      }
+    });
+  }
+
+  // Delete invoice
+  function deleteInvoice(id) {
+    if (confirm("Delete this invoice?")) {
+      clearMessage();
+      fetch(`${API_URL}/billing/${id}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Token ${token}` },
+      }).then((res) => {
+        if (res.ok) {
+          showMessage("Invoice deleted!", "success");
+          loadBilling();
+        } else {
+          showMessage("Error deleting invoice", "danger");
+        }
+      });
+    }
+  }
+
+  // Print invoice
+  function printInvoice() {
+    window.print();
+  }
+
+  // Generate report
+  function generateReport() {
+    showMessage("Report generation feature coming soon!", "info");
+  }
+
+  // Reset form
+  function resetForm() {
+    editingId = null;
+    document.getElementById("invoiceModalTitle").textContent = "New Invoice";
+    document.getElementById("invoiceForm").reset();
+  }
+
+  // Pagination
+  function renderPagination(totalPages) {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    for (let i = 1; i <= totalPages; i++) {
+      const li = document.createElement("li");
+      li.className = `page-item ${i === currentPage ? "active" : ""}`;
+      li.innerHTML = `<a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>`;
+      pagination.appendChild(li);
+    }
+  }
+
+  function goToPage(page) {
+    currentPage = page;
+    loadBilling();
+  }
+
+  // Event listeners
+  document.getElementById("searchInvoice").addEventListener("keyup", () => {
+    currentPage = 1;
+    loadBilling();
+  });
+</script>
+{% endblock %}

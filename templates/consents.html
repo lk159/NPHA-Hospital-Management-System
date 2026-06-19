@@ -1,0 +1,236 @@
+{% extends "base.html" %} {% block title %}Consent & Authorization{% endblock %}
+{% block content %}
+<div class="main-content">
+  <div class="page-header">
+    <div>
+      <h2>Consent & Authorization</h2>
+      <p class="subtitle">
+        Record and review patient consent documents and authorizations.
+      </p>
+    </div>
+    <div class="page-actions">
+      <button
+        class="btn btn-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#consentModal"
+        onclick="openConsentModal()"
+      >
+        <i class="fas fa-plus"></i> New Consent
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Patient</th>
+              <th>MRN</th>
+              <th>Consent</th>
+              <th>Signed</th>
+              <th>Signed Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="consentsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="consentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="consentModalTitle">New Consent</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="consentForm">
+          <input type="hidden" id="consentId" />
+          <div class="mb-3">
+            <label class="form-label">Patient</label>
+            <select id="consentPatient" class="form-select" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Consent Type</label>
+            <input id="consentType" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea
+              id="consentNotes"
+              class="form-control"
+              rows="4"
+            ></textarea>
+          </div>
+          <div class="form-check mb-3">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="consentSigned"
+            />
+            <label class="form-check-label" for="consentSigned">Signed</label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Signed Date</label>
+            <input
+              type="datetime-local"
+              id="consentSignedDate"
+              class="form-control"
+            />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveConsent()">
+          Save Consent
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  const apiBase = "/api";
+  const token = localStorage.getItem("token");
+
+  function requireAuth() {
+    if (!token) {
+      window.location.href = "/login/";
+      return false;
+    }
+    return true;
+  }
+
+  function getHeaders() {
+    return {
+      Authorization: `Token ${token}`,
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    };
+  }
+
+  function apiRequest(url, options = {}) {
+    const opts = { headers: getHeaders(), ...options };
+    return fetch(url, opts).then(async (response) => {
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!response.ok) {
+        throw new Error(data.error || data.detail || "Request failed");
+      }
+      return data;
+    });
+  }
+
+  function formatDateTime(value) {
+    if (!value) return "—";
+    return new Date(value).toLocaleString();
+  }
+
+  function toInputDateTime(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+  }
+
+  async function loadPatients() {
+    const data = await apiRequest(`${apiBase}/patients/?page_size=200`);
+    const select = document.getElementById("consentPatient");
+    select.innerHTML = '<option value="">Select patient</option>';
+    (data.results || data).forEach((patient) => {
+      const label = `${patient.first_name} ${patient.last_name} (${patient.mrn})`;
+      select.insertAdjacentHTML(
+        "beforeend",
+        `<option value="${patient.id}">${label}</option>`,
+      );
+    });
+  }
+
+  async function loadConsents() {
+    if (!requireAuth()) return;
+    const data = await apiRequest(`${apiBase}/consents/?page_size=200`);
+    const rows = document.getElementById("consentsTableBody");
+    rows.innerHTML = "";
+    (data.results || data).forEach((entry) => {
+      rows.insertAdjacentHTML(
+        "beforeend",
+        `
+        <tr>
+          <td>${entry.patient_name || "—"}</td>
+          <td>${entry.patient || "—"}</td>
+          <td>${entry.consent_text || ""}</td>
+          <td><span class="badge bg-${entry.signed ? "success" : "secondary"}">${entry.signed ? "Signed" : "Pending"}</span></td>
+          <td>${formatDateTime(entry.signed_date)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-2" onclick="editConsent(${entry.id})">Edit</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteConsent(${entry.id})">Delete</button>
+          </td>
+        </tr>`,
+      );
+    });
+  }
+
+  function openConsentModal() {
+    document.getElementById("consentForm").reset();
+    document.getElementById("consentId").value = "";
+    document.getElementById("consentModalTitle").textContent = "New Consent";
+    loadPatients();
+  }
+
+  async function editConsent(id) {
+    const entry = await apiRequest(`${apiBase}/consents/${id}/`);
+    document.getElementById("consentId").value = entry.id;
+    document.getElementById("consentPatient").value = entry.patient;
+    document.getElementById("consentType").value = entry.consent_text || "";
+    document.getElementById("consentNotes").value = entry.notes || "";
+    document.getElementById("consentSigned").checked = !!entry.signed;
+    document.getElementById("consentSignedDate").value = toInputDateTime(
+      entry.signed_date,
+    );
+    document.getElementById("consentModalTitle").textContent = "Edit Consent";
+    await loadPatients();
+    new bootstrap.Modal(document.getElementById("consentModal")).show();
+  }
+
+  async function saveConsent() {
+    if (!requireAuth()) return;
+    const id = document.getElementById("consentId").value;
+    const payload = {
+      patient: parseInt(document.getElementById("consentPatient").value),
+      consent_text: document.getElementById("consentType").value,
+      signed: document.getElementById("consentSigned").checked,
+      signed_date: document.getElementById("consentSignedDate").value || null,
+    };
+
+    const method = id ? "PUT" : "POST";
+    const url = id ? `${apiBase}/consents/${id}/` : `${apiBase}/consents/`;
+    await apiRequest(url, { method, body: JSON.stringify(payload) });
+    bootstrap.Modal.getInstance(document.getElementById("consentModal")).hide();
+    await loadConsents();
+  }
+
+  async function deleteConsent(id) {
+    if (!confirm("Delete this consent record?")) return;
+    await apiRequest(`${apiBase}/consents/${id}/`, { method: "DELETE" });
+    await loadConsents();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadConsents();
+    loadPatients();
+  });
+</script>
+{% endblock %}

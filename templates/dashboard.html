@@ -1,0 +1,700 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - HMS{% endblock %}
+{% block content %}
+<style>
+  .dashboard-page {
+    padding: 24px 0 40px;
+  }
+
+  .dashboard-hero {
+    background: linear-gradient(135deg, #14395f 0%, #1f4e7a 100%);
+    color: #fff;
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 18px 42px rgba(20, 57, 95, 0.18);
+  }
+
+  .dashboard-hero .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.82);
+    margin-bottom: 8px;
+  }
+
+  .dashboard-hero h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .dashboard-hero p {
+    margin-bottom: 0;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .hero-meta {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .role-pill,
+  .summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+
+  .stat-card,
+  .dashboard-panel {
+    background: #fff;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 22px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  }
+
+  .stat-card {
+    padding: 20px;
+    min-height: 152px;
+  }
+
+  .stat-card .icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    color: #fff;
+  }
+
+  .stat-card .label {
+    color: #5f6f7f;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+  }
+
+  .stat-card .value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 6px;
+  }
+
+  .stat-card .muted {
+    color: #5f6f7f;
+    margin-bottom: 0;
+  }
+
+  .dashboard-panel {
+    padding: 22px;
+  }
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .panel-head h5 {
+    margin-bottom: 4px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .panel-head p {
+    margin-bottom: 0;
+    color: #5f6f7f;
+  }
+
+  .quick-grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .quick-grid a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-decoration: none;
+    color: #0f172a;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f9fbff 0%, #eef4fb 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    font-weight: 700;
+  }
+
+  .quick-grid a:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .quick-grid i {
+    color: #3498db;
+  }
+
+  .ward-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .ward-card {
+    border-radius: 18px;
+    padding: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+  }
+
+  .ward-card h6 {
+    margin-bottom: 8px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .ward-card p {
+    margin-bottom: 8px;
+    color: #5f6f7f;
+    font-size: 0.92rem;
+  }
+
+  .progress-track {
+    height: 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #3498db 0%, #2fc1b6 100%);
+  }
+
+  .status-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .status-card {
+    border-radius: 18px;
+    padding: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+  }
+
+  .status-card span {
+    display: block;
+    color: #5f6f7f;
+    font-size: 0.95rem;
+  }
+
+  .status-card strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 1.35rem;
+    color: #0f172a;
+  }
+
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .schedule-card {
+    border-radius: 18px;
+    padding: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+  }
+
+  .schedule-card h6 {
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+  }
+
+  .schedule-card p {
+    margin-bottom: 0;
+    color: #5f6f7f;
+    line-height: 1.65;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .list-pill {
+    border-radius: 999px;
+    background: #f8fafc;
+    padding: 6px 10px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  @media (max-width: 991.98px) {
+    .ward-grid,
+    .schedule-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="dashboard-page">
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="dashboard-hero">
+        <div
+          class="d-flex flex-wrap justify-content-between gap-3 align-items-start"
+        >
+          <div>
+            <p class="eyebrow">Hospital operations dashboard</p>
+            <h1>Welcome back to your care workspace</h1>
+            <p>
+              View patient flow, ward capacity, admissions and key operational
+              activity from one secure dashboard.
+            </p>
+            <div class="hero-meta">
+              <span id="accessBadge" class="role-pill">Loading role...</span>
+              <span class="role-pill"
+                ><i class="fas fa-clock"></i><span id="currentDateLabel"></span
+              ></span>
+              <span class="role-pill">
+                <i class="fas fa-user-circle"></i>
+                <span>
+                  {{ dashboard_username|default:request.user.username }} (<span
+                    id="dashboardRoleLabel"
+                    >{{ dashboard_user_role|default:"staff"|title }}</span
+                  >)
+                </span>
+              </span>
+            </div>
+          </div>
+          <div class="text-lg-end">
+            <p class="mb-2"><strong>Role-based access</strong></p>
+            <p class="mb-0">
+              Doctors and admins unlock the full insights panel while all users
+              can access the operational summaries.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-lg-8">
+      <div class="row g-3">
+        <div class="col-sm-6 col-xl-4">
+          <div class="stat-card">
+            <div class="icon-wrap bg-primary"><i class="fas fa-users"></i></div>
+            <p class="label">Current patients</p>
+            <div id="currentPatientsValue" class="value">0</div>
+            <p class="muted">
+              <strong id="dailyPatientsValue">0</strong> new registrations today
+            </p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+          <div class="stat-card">
+            <div class="icon-wrap bg-success">
+              <i class="fas fa-calendar-check"></i>
+            </div>
+            <p class="label">Today's visits</p>
+            <div id="todayVisitsValue" class="value">0</div>
+            <p class="muted">Clinical coordination and clinic flow</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+          <div class="stat-card">
+            <div class="icon-wrap bg-warning"><i class="fas fa-bed"></i></div>
+            <p class="label">Beds occupied</p>
+            <div id="occupiedBedsValue" class="value">0</div>
+            <p class="muted">
+              <strong id="unusedBedsValue">0</strong> beds currently free
+            </p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+          <div class="stat-card">
+            <div class="icon-wrap bg-info">
+              <i class="fas fa-hospital-user"></i>
+            </div>
+            <p class="label">Today's admissions</p>
+            <div id="todayAdmissionsValue" class="value">0</div>
+            <p class="muted">Admissions captured for the day</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+          <div class="stat-card">
+            <div class="icon-wrap bg-secondary">
+              <i class="fas fa-receipt"></i>
+            </div>
+            <p class="label">Pending billing</p>
+            <div id="pendingBillingValue" class="value">0</div>
+            <p class="muted">
+              <strong id="todayBillingValue">0</strong> billing events today
+            </p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+          <div class="stat-card">
+            <div class="icon-wrap bg-danger">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <p class="label">Bed utilisation</p>
+            <div id="occupancyRateValue" class="value">0%</div>
+            <p class="muted">Capacity use across wards</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4 mt-4">
+        <div class="col-lg-7">
+          <div class="dashboard-panel">
+            <div class="panel-head">
+              <div>
+                <h5>Inpatients by ward</h5>
+                <p>
+                  Monitor ward occupancy and available capacity at a glance.
+                </p>
+              </div>
+              <span class="summary-pill"
+                ><i class="fas fa-chart-bar"></i> Ward load</span
+              >
+            </div>
+            <div id="wardCoverageGrid" class="ward-grid"></div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="dashboard-panel">
+            <div class="panel-head">
+              <div>
+                <h5>Operational focus</h5>
+                <p>Short indicators tailored for the current shift.</p>
+              </div>
+              <span class="summary-pill"
+                ><i class="fas fa-bolt"></i> At a glance</span
+              >
+            </div>
+            <div class="status-grid">
+              <div class="status-card">
+                <span>Unused beds ready for admission</span>
+                <strong id="priorityBedsValue">0</strong>
+              </div>
+              <div class="status-card">
+                <span>Current occupancy trend</span>
+                <strong id="utilisationStatusValue">Healthy</strong>
+              </div>
+              <div class="status-card">
+                <span>Staff coverage status</span>
+                <strong id="teamCoverageValue">Open</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4 mt-4">
+        <div class="col-12">
+          <div class="dashboard-panel">
+            <div class="panel-head">
+              <div>
+                <h5>Staff schedules</h5>
+                <p>
+                  Coverage planning for medical, nursing, and support teams.
+                </p>
+              </div>
+              <span class="summary-pill"
+                ><i class="fas fa-user-check"></i> On-duty monitoring</span
+              >
+            </div>
+            <div class="schedule-grid">
+              <div class="schedule-card">
+                <h6>Medical team</h6>
+                <div class="pill-row">
+                  <span class="list-pill"
+                    ><i class="fas fa-user-md me-1"></i> Doctors</span
+                  >
+                  <span class="list-pill"
+                    ><i class="fas fa-stethoscope me-1"></i> Consultants</span
+                  >
+                </div>
+                <p class="mt-3">
+                  Primary clinicians and consultants are lined up for patient
+                  reviews, ward rounds, and urgent escalation support.
+                </p>
+              </div>
+              <div class="schedule-card">
+                <h6>Nursing coverage</h6>
+                <div class="pill-row">
+                  <span class="list-pill"
+                    ><i class="fas fa-user-nurse me-1"></i> Nurses</span
+                  >
+                  <span class="list-pill"
+                    ><i class="fas fa-heartbeat me-1"></i> Ward support</span
+                  >
+                </div>
+                <p class="mt-3">
+                  Floor coverage remains active across all wards so patient
+                  observations and admissions are managed consistently.
+                </p>
+              </div>
+              <div class="schedule-card">
+                <h6>Support services</h6>
+                <div class="pill-row">
+                  <span class="list-pill"
+                    ><i class="fas fa-pills me-1"></i> Pharmacy</span
+                  >
+                  <span class="list-pill"
+                    ><i class="fas fa-flask me-1"></i> Laboratory</span
+                  >
+                </div>
+                <p class="mt-3">
+                  Support and diagnostics teams are coordinated for medication,
+                  specimen, and turnaround time visibility.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="dashboard-panel">
+        <div class="panel-head">
+          <div>
+            <h5>Dashboard summary</h5>
+            <p>Current staffing and operational signals.</p>
+          </div>
+          <span class="summary-pill"
+            ><i class="fas fa-circle-check"></i> Current status</span
+          >
+        </div>
+        <div class="status-grid">
+          <div class="status-card">
+            <span>Patients in system</span>
+            <strong id="summaryPatientsValue">0</strong>
+          </div>
+          <div class="status-card">
+            <span>Available beds</span>
+            <strong id="summaryBedsValue">0</strong>
+          </div>
+          <div class="status-card">
+            <span>Visits tracked today</span>
+            <strong id="summaryVisitsValue">0</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Check if user role is locked to a specific page
+  const rawRole = localStorage.getItem("role") || "staff";
+  const role = rawRole.toLowerCase().replace(/[^a-z]/g, "");
+
+  const lockedRoles = {
+    pharmacy: "/pharmacy/",
+    lab: "/lab/",
+  };
+
+  if (lockedRoles[role]) {
+    // Redirect locked roles to their designated page
+    const token = new URLSearchParams(window.location.search).get("token");
+    window.location.href = lockedRoles[role] + (token ? "?token=" + token : "");
+  }
+
+  const readableRole =
+    {
+      doctor: "Doctor",
+      admin: "Admin",
+      nurse: "Nurse",
+      heo: "HEO",
+      mrc: "MRC",
+      pharmacy: "Pharmacy",
+      lab: "Lab",
+      staff: "Staff",
+    }[role] || role.charAt(0).toUpperCase() + role.slice(1);
+
+  const fullAccess = ["doctor", "nurse", "mrc", "heo"].includes(role);
+  document.getElementById("accessBadge").textContent =
+    `${readableRole} - ${role === "admin" ? "View only" : fullAccess ? "Full access" : "Limited access"}`;
+
+  const dashboardRoleLabel = document.getElementById("dashboardRoleLabel");
+  if (dashboardRoleLabel) {
+    dashboardRoleLabel.textContent = readableRole;
+  }
+
+  const adminDashboardLink = document.getElementById("adminDashboardLink");
+  if (adminDashboardLink) {
+    adminDashboardLink.classList.toggle("d-none", role !== "admin");
+  }
+
+  document.getElementById("currentDateLabel").textContent =
+    new Date().toLocaleString();
+
+  function renderWardCoverage(wardAvailability = []) {
+    const grid = document.getElementById("wardCoverageGrid");
+    if (!grid) return;
+
+    if (!wardAvailability.length) {
+      grid.innerHTML = `
+        <div class="col-12">
+          <div class="ward-card">
+            <p class="mb-0">No ward availability data is available right now.</p>
+          </div>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = wardAvailability
+      .map(
+        (ward) => `
+      <div class="ward-card">
+        <h6>${ward.ward_name}</h6>
+        <p>${ward.occupied_beds} occupied | ${ward.available_beds} available | ${ward.maintenance_beds || 0} maintenance</p>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${Math.max(0, Math.min(100, (ward.occupied_beds / Math.max(1, ward.total_beds)) * 100))}%"></div>
+        </div>
+        <p class="mb-0 small">${ward.available_beds} / ${ward.total_beds} beds ready for use</p>
+      </div>`,
+      )
+      .join("");
+  }
+
+  function renderDashboard(data) {
+    const totalPatients = data.total_patients ?? 0;
+    const occupiedBeds = data.occupied_beds ?? 0;
+    const availableBeds = data.available_beds ?? 0;
+    const totalBeds = data.total_beds ?? 0;
+    const todaysVisits = data.daily_visits ?? 0;
+    const todaysAdmissions = data.daily_admissions ?? 0;
+    const todayBilling = data.daily_billing ?? 0;
+    const todayPatients = data.daily_patients ?? 0;
+    const occupancyRate = totalBeds
+      ? Math.round((occupiedBeds / totalBeds) * 100)
+      : 0;
+
+    document.getElementById("currentPatientsValue").textContent = totalPatients;
+    document.getElementById("dailyPatientsValue").textContent = todayPatients;
+    document.getElementById("todayVisitsValue").textContent = todaysVisits;
+    document.getElementById("occupiedBedsValue").textContent = occupiedBeds;
+    document.getElementById("unusedBedsValue").textContent = availableBeds;
+    document.getElementById("todayAdmissionsValue").textContent =
+      todaysAdmissions;
+    document.getElementById("pendingBillingValue").textContent =
+      data.pending_billing ?? 0;
+    document.getElementById("todayBillingValue").textContent = todayBilling;
+    document.getElementById("occupancyRateValue").textContent =
+      `${occupancyRate}%`;
+    document.getElementById("priorityBedsValue").textContent = availableBeds;
+    document.getElementById("utilisationStatusValue").textContent =
+      occupancyRate >= 80
+        ? "High"
+        : occupancyRate >= 50
+          ? "Moderate"
+          : "Healthy";
+    document.getElementById("teamCoverageValue").textContent = fullAccess
+      ? "Optimised"
+      : "Open";
+    document.getElementById("summaryPatientsValue").textContent = totalPatients;
+    document.getElementById("summaryBedsValue").textContent = availableBeds;
+    document.getElementById("summaryVisitsValue").textContent = todaysVisits;
+
+    renderWardCoverage(data.ward_availability || []);
+  }
+
+  async function initDashboard() {
+    try {
+      const response = await window.apiCall("/api/dashboard/");
+
+      // Log response status for debugging
+      console.log("Dashboard API Response Status:", response.status);
+
+      if (!response.ok) {
+        console.error(`API Error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("Error details:", errorText);
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Dashboard Data Received:", data);
+
+      if (!data || typeof data !== "object") {
+        throw new Error("Invalid response data");
+      }
+
+      renderDashboard(data);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      const errorFields = [
+        "currentPatientsValue",
+        "todayVisitsValue",
+        "occupiedBedsValue",
+        "todayAdmissionsValue",
+        "unusedBedsValue",
+        "occupancyRateValue",
+        "pendingBillingValue",
+        "todayBillingValue",
+        "summaryPatientsValue",
+        "summaryBedsValue",
+        "summaryVisitsValue",
+      ];
+
+      errorFields.forEach((field) => {
+        const elem = document.getElementById(field);
+        if (elem) elem.textContent = "Unable to load";
+      });
+
+      renderWardCoverage([]);
+
+      // Show alert to user
+      const alertDiv = document.createElement("div");
+      alertDiv.className = "alert alert-warning alert-dismissible fade show";
+      alertDiv.innerHTML = `
+        <strong>Dashboard Error:</strong> Could not load data. ${error.message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      document
+        .querySelector(".dashboard-page")
+        .insertBefore(
+          alertDiv,
+          document.querySelector(".dashboard-page").firstChild,
+        );
+    }
+  }
+
+  // Wait for DOM to be ready before initializing
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initDashboard);
+  } else {
+    initDashboard();
+  }
+</script>
+{% endblock %}
+

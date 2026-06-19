@@ -1,0 +1,51 @@
+{% extends "base.html" %} {% block title %}HEO Dashboard - Hospital Management
+System{% endblock %} {% block content %}
+<div class="container-fluid py-4">
+  <div class="page-header mb-4">
+    <div>
+      <h1><i class="fas fa-user-tie me-2"></i>HEO Dashboard</h1>
+      <p class="subtitle">
+        Use the shared patient and visit workflows to support clinical review,
+        follow-up, and documentation.
+      </p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card p-4 h-100">
+        <h4><i class="fas fa-users me-2"></i>Patient review</h4>
+        <p class="text-muted">
+          Open patient details and review complaints, diagnosis, lab results,
+          and treatment plans.
+        </p>
+        <a href="/patient-details/" class="btn btn-primary"
+          >Open patient details</a
+        >
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-4 h-100">
+        <h4><i class="fas fa-calendar me-2"></i>Visit records</h4>
+        <p class="text-muted">
+          Review visit history and coordinate follow-up tasks from the shared
+          workspace.
+        </p>
+        <a href="/visits/" class="btn btn-outline-primary">Open visits</a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-4 h-100">
+        <h4><i class="fas fa-file-signature me-2"></i>Authorization</h4>
+        <p class="text-muted">
+          Keep consent and authorization workflows aligned with patient care
+          updates.
+        </p>
+        <a href="/consents/" class="btn btn-outline-secondary">Open consents</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

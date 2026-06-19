@@ -1,0 +1,664 @@
+{% extends "base.html" %} {% block title %}Patient Details - Hospital Management
+System{% endblock %} {% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">Patient Details</h2>
+      <p class="text-muted mb-0">
+        Review patient information and update complaints, diagnosis, lab
+        results, and treatment plans.
+      </p>
+    </div>
+    <a href="/" class="btn btn-outline-primary">Back to dashboard</a>
+  </div>
+
+  <div class="alert alert-warning d-none" id="messageBox"></div>
+
+  <div class="patient-summary mb-4">
+    <div class="row align-items-end g-3">
+      <div class="col-md-6">
+        <p class="mb-1 text-light-emphasis">Current patient</p>
+        <h3 id="patientName" class="mb-0">Select a patient</h3>
+        <p id="patientMeta" class="mb-0 mt-2">MRN unavailable</p>
+      </div>
+      <div class="col-md-6">
+        <label for="patientSelector" class="form-label text-white"
+          >Choose patient</label
+        >
+        <select id="patientSelector" class="form-select"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card section-card p-3">
+        <h5 class="mb-3">Patient summary</h5>
+        <div id="patientDetails"></div>
+      </div>
+
+      <div class="card section-card p-3">
+        <h5 class="mb-3">Visits</h5>
+        <label for="visitSelector" class="form-label">Select visit</label>
+        <select id="visitSelector" class="form-select mb-3"></select>
+        <div id="visitDetails" class="small text-muted"></div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card section-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h4 class="mb-1">Complaint & history</h4>
+            <p class="text-muted mb-0">
+              View access for all users; edit access for HEOs and doctors.
+            </p>
+          </div>
+          <span id="complaintBadge" class="badge bg-info">Read only</span>
+        </div>
+        <form id="complaintForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Complaint</label>
+              <textarea id="complaintText" class="form-control"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">History</label>
+              <textarea id="complaintHistory" class="form-control"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Symptom duration</label>
+              <input id="symptomDuration" class="form-control" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Past medical history</label>
+              <textarea id="pastMedicalHistory" class="form-control"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Family history</label>
+              <textarea id="familyHistory" class="form-control"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Allergies</label>
+              <textarea id="allergies" class="form-control"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Current medication</label>
+              <textarea id="currentMedication" class="form-control"></textarea>
+            </div>
+          </div>
+          <div class="mt-3">
+            <button type="button" id="saveComplaintBtn" class="btn btn-primary">
+              Save complaint
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card section-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h4 class="mb-1">Diagnosis & assessment</h4>
+            <p class="text-muted mb-0">
+              Record or review diagnosis for the selected visit.
+            </p>
+          </div>
+          <span id="diagnosisBadge" class="badge bg-secondary">Read only</span>
+        </div>
+        <form id="diagnosisForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Diagnosis date</label>
+              <input id="diagnosisDate" type="date" class="form-control" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Findings</label>
+              <textarea id="diagnosisFindings" class="form-control"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Diagnosis</label>
+              <textarea id="diagnosisText" class="form-control"></textarea>
+            </div>
+          </div>
+          <div class="mt-3">
+            <button type="button" id="saveDiagnosisBtn" class="btn btn-primary">
+              Save diagnosis
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card section-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h4 class="mb-1">Lab results</h4>
+            <p class="text-muted mb-0">
+              Lab technicians can edit these results.
+            </p>
+          </div>
+          <span id="labBadge" class="badge bg-secondary">Read only</span>
+        </div>
+        <form id="labForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Test type</label>
+              <input id="labTestType" class="form-control" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Result date</label>
+              <input id="labResultDate" type="date" class="form-control" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Result</label>
+              <textarea id="labResult" class="form-control"></textarea>
+            </div>
+          </div>
+          <div class="mt-3">
+            <button type="button" id="saveLabBtn" class="btn btn-primary">
+              Save lab result
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card section-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h4 class="mb-1">Treatment plan</h4>
+            <p class="text-muted mb-0">
+              Record or update treatment administered and the care plan.
+            </p>
+          </div>
+          <span id="treatmentBadge" class="badge bg-secondary">Read only</span>
+        </div>
+        <form id="treatmentForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Medication</label>
+              <input id="treatmentMedication" class="form-control" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Dosage</label>
+              <input id="treatmentDosage" class="form-control" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Duration</label>
+              <input id="treatmentDuration" class="form-control" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Review date</label>
+              <input
+                id="treatmentReviewDate"
+                type="date"
+                class="form-control"
+              />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Instructions</label>
+              <textarea
+                id="treatmentInstructions"
+                class="form-control"
+              ></textarea>
+            </div>
+          </div>
+          <div class="mt-3">
+            <button type="button" id="saveTreatmentBtn" class="btn btn-primary">
+              Save treatment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block extra_js %}
+<script>
+  const API_BASE = "/api";
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role") || "";
+  const params = new URLSearchParams(window.location.search);
+
+  const permissions = {
+    complaintEdit: ["mrc", "nurse", "heo", "doctor", "admin"].includes(role),
+    diagnosisEdit: ["mrc", "nurse", "heo", "doctor", "admin"].includes(role),
+    labEdit: ["lab", "admin"].includes(role),
+    treatmentEdit: ["mrc", "nurse", "heo", "doctor", "admin"].includes(role),
+  };
+
+  let selectedPatientId = params.get("id");
+  let selectedVisitId = null;
+  let currentRecords = {
+    complaint: null,
+    diagnosis: null,
+    lab: null,
+    treatment: null,
+  };
+
+  if (!token) {
+    window.location.href = "/login/";
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    await loadPatients();
+    setupButtons();
+
+    if (selectedPatientId) {
+      document.getElementById("patientSelector").value =
+        String(selectedPatientId);
+      await loadPatientDetails(selectedPatientId);
+    }
+  });
+
+  async function fetchJson(url) {
+    const response = await fetch(url, {
+      headers: { Authorization: `Token ${token}` },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || response.statusText);
+    }
+
+    return response.json();
+  }
+
+  function showMessage(message, type = "warning") {
+    const box = document.getElementById("messageBox");
+    box.className = `alert alert-${type} d-block`;
+    box.textContent = message;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function loadPatients() {
+    const select = document.getElementById("patientSelector");
+    const patients = await fetchJson(`${API_BASE}/patients/?search=`);
+
+    select.innerHTML = '<option value="">Choose a patient</option>';
+    patients.forEach((patient) => {
+      const option = document.createElement("option");
+      option.value = patient.id;
+      option.textContent = `${patient.first_name} ${patient.last_name}`;
+      select.appendChild(option);
+    });
+
+    select.addEventListener("change", async (event) => {
+      selectedPatientId = event.target.value;
+      if (selectedPatientId) {
+        await loadPatientDetails(selectedPatientId);
+      }
+    });
+  }
+
+  async function loadPatientDetails(patientId) {
+    if (!patientId) {
+      clearPatientDetails();
+      return;
+    }
+
+    const patient = await fetchJson(`${API_BASE}/patients/${patientId}/`);
+    const patientName =
+      `${patient.first_name || ""} ${patient.middle_name || ""} ${patient.last_name || ""}`.trim();
+    document.getElementById("patientName").textContent =
+      patientName || "Unknown patient";
+    document.getElementById("patientMeta").textContent =
+      `MRN: ${patient.mrn || "Pending"}`;
+
+    document.getElementById("patientDetails").innerHTML = `
+          <p><strong>Gender:</strong> ${patient.gender || "N/A"}</p>
+          <p><strong>Date of birth:</strong> ${patient.dob || "N/A"}</p>
+          <p><strong>Phone:</strong> ${patient.phone || "N/A"}</p>
+          <p><strong>Address:</strong> ${patient.address || "N/A"}</p>
+          <p><strong>Village:</strong> ${patient.village || "N/A"}</p>
+          <p><strong>District:</strong> ${patient.district || "N/A"}</p>
+          <p><strong>Next of kin:</strong> ${patient.next_of_kin_name || "N/A"}</p>
+          <p><strong>Kin phone:</strong> ${patient.next_of_kin_phone || "N/A"}</p>
+        `;
+
+    await loadVisits(patientId);
+  }
+
+  async function loadVisits(patientId) {
+    const visits = await fetchJson(`${API_BASE}/visits/?patient=${patientId}`);
+    const visitSelector = document.getElementById("visitSelector");
+    visitSelector.innerHTML = '<option value="">Choose a visit</option>';
+
+    visits.forEach((visit) => {
+      const option = document.createElement("option");
+      option.value = visit.id;
+      option.textContent = `${visit.visit_date} • ${visit.visit_type || "Visit"}`;
+      visitSelector.appendChild(option);
+    });
+
+    if (visits.length) {
+      selectedVisitId = visits[0].id;
+      visitSelector.value = String(selectedVisitId);
+      renderVisitDetails(visits[0]);
+      await loadAllRecords();
+    } else {
+      selectedVisitId = null;
+      document.getElementById("visitDetails").textContent =
+        "No visits have been recorded for this patient yet.";
+      resetForms();
+    }
+
+    visitSelector.addEventListener("change", async (event) => {
+      selectedVisitId = event.target.value;
+      const visit = visits.find(
+        (item) => String(item.id) === String(selectedVisitId),
+      );
+      if (visit) {
+        renderVisitDetails(visit);
+        await loadAllRecords();
+      }
+    });
+  }
+
+  function renderVisitDetails(visit) {
+    document.getElementById("visitDetails").innerHTML = `
+          <p><strong>Reason:</strong> ${visit.reason || "N/A"}</p>
+          <p><strong>Status:</strong> ${visit.status || "N/A"}</p>
+          <p><strong>Notes:</strong> ${visit.notes || "N/A"}</p>
+        `;
+  }
+
+  async function loadAllRecords() {
+    if (!selectedVisitId) {
+      resetForms();
+      return;
+    }
+
+    await Promise.all([
+      loadComplaintRecord(),
+      loadDiagnosisRecord(),
+      loadLabRecord(),
+      loadTreatmentRecord(),
+    ]);
+
+    updateEditBadges();
+  }
+
+  function resetForms() {
+    currentRecords = {
+      complaint: null,
+      diagnosis: null,
+      lab: null,
+      treatment: null,
+    };
+    document.getElementById("complaintForm").reset();
+    document.getElementById("diagnosisForm").reset();
+    document.getElementById("labForm").reset();
+    document.getElementById("treatmentForm").reset();
+  }
+
+  async function loadComplaintRecord() {
+    if (!selectedVisitId) return;
+    const records = await fetchJson(
+      `${API_BASE}/complaints/?visit=${selectedVisitId}`,
+    );
+    currentRecords.complaint = records.length ? records[0] : null;
+    if (currentRecords.complaint) {
+      populateComplaintForm(currentRecords.complaint);
+    } else {
+      document.getElementById("complaintForm").reset();
+    }
+  }
+
+  async function loadDiagnosisRecord() {
+    if (!selectedVisitId) return;
+    const records = await fetchJson(
+      `${API_BASE}/diagnosis/?visit=${selectedVisitId}`,
+    );
+    currentRecords.diagnosis = records.length ? records[0] : null;
+    if (currentRecords.diagnosis) {
+      populateDiagnosisForm(currentRecords.diagnosis);
+    } else {
+      document.getElementById("diagnosisForm").reset();
+    }
+  }
+
+  async function loadLabRecord() {
+    if (!selectedVisitId) return;
+    const records = await fetchJson(
+      `${API_BASE}/lab-results/?visit=${selectedVisitId}`,
+    );
+    currentRecords.lab = records.length ? records[0] : null;
+    if (currentRecords.lab) {
+      populateLabForm(currentRecords.lab);
+    } else {
+      document.getElementById("labForm").reset();
+    }
+  }
+
+  async function loadTreatmentRecord() {
+    if (!selectedVisitId) return;
+    const records = await fetchJson(
+      `${API_BASE}/treatments/?visit=${selectedVisitId}`,
+    );
+    currentRecords.treatment = records.length ? records[0] : null;
+    if (currentRecords.treatment) {
+      populateTreatmentForm(currentRecords.treatment);
+    } else {
+      document.getElementById("treatmentForm").reset();
+    }
+  }
+
+  function populateComplaintForm(record) {
+    document.getElementById("complaintText").value = record.complaint || "";
+    document.getElementById("complaintHistory").value = record.history || "";
+    document.getElementById("symptomDuration").value =
+      record.symptom_duration || "";
+    document.getElementById("pastMedicalHistory").value =
+      record.past_medical_history || "";
+    document.getElementById("familyHistory").value =
+      record.family_history || "";
+    document.getElementById("allergies").value = record.allergies || "";
+    document.getElementById("currentMedication").value =
+      record.current_medication || "";
+  }
+
+  function populateDiagnosisForm(record) {
+    document.getElementById("diagnosisDate").value =
+      record.diagnosis_date || "";
+    document.getElementById("diagnosisFindings").value = record.findings || "";
+    document.getElementById("diagnosisText").value = record.diagnosis || "";
+  }
+
+  function populateLabForm(record) {
+    document.getElementById("labTestType").value = record.test_type || "";
+    document.getElementById("labResultDate").value = record.result_date || "";
+    document.getElementById("labResult").value = record.result || "";
+  }
+
+  function populateTreatmentForm(record) {
+    document.getElementById("treatmentMedication").value =
+      record.medication || "";
+    document.getElementById("treatmentDosage").value = record.dosage || "";
+    document.getElementById("treatmentDuration").value = record.duration || "";
+    document.getElementById("treatmentReviewDate").value =
+      record.review_date || "";
+    document.getElementById("treatmentInstructions").value =
+      record.instructions || "";
+  }
+
+  function updateEditBadges() {
+    document.getElementById("complaintBadge").textContent =
+      permissions.complaintEdit ? "Editable" : "Read only";
+    document.getElementById("complaintBadge").className =
+      `badge ${permissions.complaintEdit ? "bg-success" : "bg-secondary"}`;
+    document.getElementById("diagnosisBadge").textContent =
+      permissions.diagnosisEdit ? "Editable" : "Read only";
+    document.getElementById("diagnosisBadge").className =
+      `badge ${permissions.diagnosisEdit ? "bg-success" : "bg-secondary"}`;
+    document.getElementById("labBadge").textContent = permissions.labEdit
+      ? "Editable"
+      : "Read only";
+    document.getElementById("labBadge").className =
+      `badge ${permissions.labEdit ? "bg-success" : "bg-secondary"}`;
+    document.getElementById("treatmentBadge").textContent =
+      permissions.treatmentEdit ? "Editable" : "Read only";
+    document.getElementById("treatmentBadge").className =
+      `badge ${permissions.treatmentEdit ? "bg-success" : "bg-secondary"}`;
+
+    [
+      ["saveComplaintBtn", permissions.complaintEdit],
+      ["saveDiagnosisBtn", permissions.diagnosisEdit],
+      ["saveLabBtn", permissions.labEdit],
+      ["saveTreatmentBtn", permissions.treatmentEdit],
+    ].forEach(([id, editable]) => {
+      const button = document.getElementById(id);
+      button.disabled = !editable;
+      button.title = editable
+        ? ""
+        : "You do not have permission to edit this section";
+    });
+  }
+
+  async function saveRecord(endpoint, payload, currentRecord, successMessage) {
+    if (!selectedVisitId) {
+      showMessage("Select a visit before saving a record.", "warning");
+      return;
+    }
+
+    const url = currentRecord
+      ? `${API_BASE}/${endpoint}/${currentRecord.id}/`
+      : `${API_BASE}/${endpoint}/`;
+    const method = currentRecord ? "PUT" : "POST";
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `Unable to save ${endpoint}`);
+    }
+
+    showMessage(successMessage, "success");
+    await loadAllRecords();
+  }
+
+  function setupButtons() {
+    document
+      .getElementById("saveComplaintBtn")
+      .addEventListener("click", async () => {
+        if (!permissions.complaintEdit) {
+          showMessage(
+            "You do not have permission to edit complaint records.",
+            "danger",
+          );
+          return;
+        }
+
+        await saveRecord(
+          "complaints",
+          {
+            visit: selectedVisitId,
+            complaint: document.getElementById("complaintText").value,
+            history: document.getElementById("complaintHistory").value,
+            symptom_duration: document.getElementById("symptomDuration").value,
+            past_medical_history:
+              document.getElementById("pastMedicalHistory").value,
+            family_history: document.getElementById("familyHistory").value,
+            allergies: document.getElementById("allergies").value,
+            current_medication:
+              document.getElementById("currentMedication").value,
+          },
+          currentRecords.complaint,
+          "Complaint saved successfully.",
+        );
+      });
+
+    document
+      .getElementById("saveDiagnosisBtn")
+      .addEventListener("click", async () => {
+        if (!permissions.diagnosisEdit) {
+          showMessage(
+            "You do not have permission to edit diagnosis records.",
+            "danger",
+          );
+          return;
+        }
+
+        await saveRecord(
+          "diagnosis",
+          {
+            visit: selectedVisitId,
+            diagnosis_date: document.getElementById("diagnosisDate").value,
+            findings: document.getElementById("diagnosisFindings").value,
+            diagnosis: document.getElementById("diagnosisText").value,
+          },
+          currentRecords.diagnosis,
+          "Diagnosis saved successfully.",
+        );
+      });
+
+    document
+      .getElementById("saveLabBtn")
+      .addEventListener("click", async () => {
+        if (!permissions.labEdit) {
+          showMessage(
+            "You do not have permission to edit lab results.",
+            "danger",
+          );
+          return;
+        }
+
+        await saveRecord(
+          "lab-results",
+          {
+            visit: selectedVisitId,
+            test_type: document.getElementById("labTestType").value,
+            result_date: document.getElementById("labResultDate").value,
+            result: document.getElementById("labResult").value,
+          },
+          currentRecords.lab,
+          "Lab result saved successfully.",
+        );
+      });
+
+    document
+      .getElementById("saveTreatmentBtn")
+      .addEventListener("click", async () => {
+        if (!permissions.treatmentEdit) {
+          showMessage(
+            "You do not have permission to edit treatment plans.",
+            "danger",
+          );
+          return;
+        }
+
+        await saveRecord(
+          "treatments",
+          {
+            visit: selectedVisitId,
+            medication: document.getElementById("treatmentMedication").value,
+            dosage: document.getElementById("treatmentDosage").value,
+            duration: document.getElementById("treatmentDuration").value,
+            review_date: document.getElementById("treatmentReviewDate").value,
+            instructions: document.getElementById("treatmentInstructions")
+              .value,
+          },
+          currentRecords.treatment,
+          "Treatment saved successfully.",
+        );
+      });
+  }
+
+  clearPatientDetails = function () {
+    document.getElementById("patientName").textContent = "Select a patient";
+    document.getElementById("patientMeta").textContent = "MRN unavailable";
+    document.getElementById("patientDetails").innerHTML = "";
+    document.getElementById("visitSelector").innerHTML =
+      '<option value="">Choose a visit</option>';
+    document.getElementById("visitDetails").textContent =
+      "Choose a patient to view visits.";
+    resetForms();
+  };
+</script>
+{% endblock %}
